@@ -1,0 +1,59 @@
+# Cleo Quality
+
+Local quality checks for Cleo repositories.
+
+## Usage
+
+```bash
+bundle exec check_quality --format agent --checks reek --files vendor/cleo-quality/lib
+bundle exec check_quality --format github --checks fasterer --files app/services/my_area
+OPEN_AI_API_KEY=... bundle exec check_quality --format human --files app/models/example.rb
+```
+
+`--files` accepts files or directories. Directories are expanded recursively; Ruby files are checked and all expanded files are available as prompt context. When `--files` is omitted, `check_quality` targets changed Ruby files from `origin/main...HEAD`.
+
+## Checks
+
+The gem embeds Ruby check adapters for Reek, Flog, and Fasterer. Each run writes raw tool artifacts to `tmp/quality_checks/<epoch>/<check>/raw_output.*` and also normalizes findings for machine-readable output.
+
+`agent` output prints one JSON document containing run metadata, the git diff, all raw tool outputs, format instructions, and normalized findings.
+
+`github` output prints GitHub workflow annotation commands for normalized findings, followed by a notice summarizing the top actionable issues when findings are present. Configure the summary count with `CLEO_QUALITY_GITHUB_SUMMARY_LIMIT`.
+
+## Prompts
+
+Prompts are format-specific:
+
+- `human`
+- `agent`
+- `github`
+
+Local overrides are loaded first from `.cleo_quality/prompts/<format>.md`, then `.cleo_quality/<format>.md`. For backwards compatibility, `human` also supports `.cleo_quality/prompt.md`. If no local prompt exists, the gem uses `vendor/cleo-quality/prompts/<format>.md`.
+
+## LLM Configuration
+
+Human output uses a configurable LLM provider.
+
+### OpenAI Provider
+
+OpenAI uses the Responses API through a direct HTTPS request. By default the gem reads `OPEN_AI_API_KEY` and uses `gpt-5.5`.
+
+Override the API key env var name with `CLEO_QUALITY_OPENAI_API_KEY_ENV`.
+Override the model with `CLEO_QUALITY_OPENAI_MODEL`.
+
+### Command Provider
+
+Use the command provider to plug in another LLM client without changing the gem:
+
+```bash
+CLEO_QUALITY_LLM_PROVIDER=command \
+CLEO_QUALITY_LLM_COMMAND="llm --model claude-sonnet" \
+bundle exec check_quality --format human --files app/models/example.rb
+```
+
+The assembled prompt is sent to the command on stdin. The command's stdout is used as the human review output. If `CLEO_QUALITY_LLM_COMMAND` is set and `CLEO_QUALITY_LLM_PROVIDER` is unset, the gem automatically uses the command provider.
+
+Supported providers:
+
+- `openai`
+- `command`

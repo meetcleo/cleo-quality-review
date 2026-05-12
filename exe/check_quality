@@ -1,0 +1,6 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+require "cleo_quality/cli"
+
+exit CleoQuality::CLI.new(ARGV).run
