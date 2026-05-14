@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require_relative "test_helper"
-require "cleo_quality/open_ai_config"
+require "cleo_quality_review/open_ai_config"
 
-module CleoQuality
+module CleoQualityReview
   class OpenAiConfigTest < Minitest::Test
     def test_defaults_to_requested_env_and_model
       config = OpenAiConfig.new(env: { "OPEN_AI_API_KEY" => "secret" })
@@ -17,9 +17,9 @@ module CleoQuality
     def test_allows_env_and_model_overrides
       config = OpenAiConfig.new(
         env: {
-          "CLEO_QUALITY_OPENAI_API_KEY_ENV" => "OPENAI_ACCESS_TOKEN",
+          "CLEO_QUALITY_REVIEW_OPENAI_API_KEY_ENV" => "OPENAI_ACCESS_TOKEN",
           "OPENAI_ACCESS_TOKEN" => "repo-secret",
-          "CLEO_QUALITY_OPENAI_MODEL" => "gpt-5.2",
+          "CLEO_QUALITY_REVIEW_OPENAI_MODEL" => "gpt-5.2",
         },
       )
 

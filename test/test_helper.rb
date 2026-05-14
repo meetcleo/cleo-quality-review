@@ -6,10 +6,10 @@ require "tmpdir"
 
 $LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
 
-require "cleo_quality"
-require "cleo_quality/command_result"
+require "cleo_quality_review"
+require "cleo_quality_review/command_result"
 
-module CleoQualityTestHelpers
+module CleoQualityReviewTestHelpers
   Status = Struct.new(:success) do
     def success?
       success
@@ -21,7 +21,7 @@ module CleoQualityTestHelpers
   end
 
   def command_result(stdout: "", stderr: "", success: true)
-    CleoQuality::CommandResult.new(
+    CleoQualityReview::CommandResult.new(
       stdout: stdout,
       stderr: stderr,
       status: Status.new(success),
@@ -39,7 +39,7 @@ module CleoQualityTestHelpers
   end
 end
 
-Minitest::Test.include(CleoQualityTestHelpers)
+Minitest::Test.include(CleoQualityReviewTestHelpers)
 
 class StubGitCommandRunner
   def run(*command, env: {})
@@ -58,10 +58,10 @@ class StubGitCommandRunner
   private
 
   def result(stdout:, stderr: "", success: true)
-    CleoQuality::CommandResult.new(
+    CleoQualityReview::CommandResult.new(
       stdout: stdout,
       stderr: stderr,
-      status: CleoQualityTestHelpers::Status.new(success),
+      status: CleoQualityReviewTestHelpers::Status.new(success),
     )
   end
 end

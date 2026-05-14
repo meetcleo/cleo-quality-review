@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require_relative "test_helper"
-require "cleo_quality/checks/quality_check"
-require "cleo_quality/options"
-require "cleo_quality/runner"
+require "cleo_quality_review/checks/quality_check"
+require "cleo_quality_review/options"
+require "cleo_quality_review/runner"
 
-module CleoQuality
+module CleoQualityReview
   class RunnerTest < Minitest::Test
     FakeClock = Struct.new(:now, keyword_init: true)
 
@@ -14,17 +14,17 @@ module CleoQuality
         calls << command
         case command
         when ["git", "merge-base", "origin/main", "HEAD"]
-          CleoQuality::CommandResult.new(stdout: "base-sha\n", stderr: "", status: CleoQualityTestHelpers::Status.new(true))
+          CleoQualityReview::CommandResult.new(stdout: "base-sha\n", stderr: "", status: CleoQualityReviewTestHelpers::Status.new(true))
         when ["git", "diff", "--name-only", "--diff-filter=ACMRT", "base-sha"]
-          CleoQuality::CommandResult.new(stdout: "app/example.rb\n", stderr: "", status: CleoQualityTestHelpers::Status.new(true))
+          CleoQualityReview::CommandResult.new(stdout: "app/example.rb\n", stderr: "", status: CleoQualityReviewTestHelpers::Status.new(true))
         when ["git", "ls-files", "--others", "--exclude-standard"]
-          CleoQuality::CommandResult.new(stdout: "", stderr: "", status: CleoQualityTestHelpers::Status.new(true))
+          CleoQualityReview::CommandResult.new(stdout: "", stderr: "", status: CleoQualityReviewTestHelpers::Status.new(true))
         when ["git", "diff", "base-sha", "--", "app/example.rb"]
-          CleoQuality::CommandResult.new(stdout: "diff --git a/app/example.rb b/app/example.rb\n", stderr: "", status: CleoQualityTestHelpers::Status.new(true))
+          CleoQualityReview::CommandResult.new(stdout: "diff --git a/app/example.rb b/app/example.rb\n", stderr: "", status: CleoQualityReviewTestHelpers::Status.new(true))
         when ["git", "ls-files", "--others", "--exclude-standard", "--", "app/example.rb"]
-          CleoQuality::CommandResult.new(stdout: "", stderr: "", status: CleoQualityTestHelpers::Status.new(true))
+          CleoQualityReview::CommandResult.new(stdout: "", stderr: "", status: CleoQualityReviewTestHelpers::Status.new(true))
         else
-          CleoQuality::CommandResult.new(stdout: "", stderr: "", status: CleoQualityTestHelpers::Status.new(true))
+          CleoQualityReview::CommandResult.new(stdout: "", stderr: "", status: CleoQualityReviewTestHelpers::Status.new(true))
         end
       end
     end

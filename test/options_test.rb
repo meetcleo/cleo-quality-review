@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require_relative "test_helper"
-require "cleo_quality/options"
+require "cleo_quality_review/options"
 
-module CleoQuality
+module CleoQualityReview
   class OptionsTest < Minitest::Test
     def test_defaults_to_human_format_and_all_checks
       options = Options.parse([])

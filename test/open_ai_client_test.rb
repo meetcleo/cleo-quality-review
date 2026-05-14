@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require_relative "test_helper"
-require "cleo_quality/open_ai_client"
+require "cleo_quality_review/open_ai_client"
 
-module CleoQuality
+module CleoQualityReview
   class OpenAiClientTest < Minitest::Test
     FakeConfig = Struct.new(:api_key, :model, keyword_init: true)
     FakeTransport = Struct.new(:response, :received_uri, :received_headers, :received_body, keyword_init: true) do

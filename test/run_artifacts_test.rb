@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require_relative "test_helper"
-require "cleo_quality/run_artifacts"
+require "cleo_quality_review/run_artifacts"
 
-module CleoQuality
+module CleoQualityReview
   class RunArtifactsTest < Minitest::Test
     def test_reserves_unique_directory_when_timestamp_directory_exists
       in_tmpdir do

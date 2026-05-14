@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require_relative "test_helper"
-require "cleo_quality/command_llm_client"
+require "cleo_quality_review/command_llm_client"
 
-module CleoQuality
+module CleoQualityReview
   class CommandLlmClientTest < Minitest::Test
     FakeCommandRunner = Struct.new(:received_command, :received_stdin, :result, keyword_init: true) do
       def run(*command, env: {}, stdin_data: nil)

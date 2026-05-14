@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require_relative "test_helper"
-require "cleo_quality/check_registry"
+require "cleo_quality_review/check_registry"
 
-module CleoQuality
+module CleoQualityReview
   class CheckRegistryTest < Minitest::Test
     def test_defaults_to_all_checks
       assert_equal %w[reek flog fasterer], CheckRegistry.resolve(["all"]).map(&:check_name)

@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require_relative "test_helper"
-require "cleo_quality/formatters/human"
-require "cleo_quality/llm_config"
-require "cleo_quality/run"
+require "cleo_quality_review/formatters/human"
+require "cleo_quality_review/llm_config"
+require "cleo_quality_review/run"
 
-module CleoQuality
+module CleoQualityReview
   module Formatters
     class HumanTest < Minitest::Test
       FakeLlmClient = Struct.new(:received_prompt, keyword_init: true) do
@@ -40,7 +40,7 @@ module CleoQuality
 
         assert_includes error.message, "Missing OpenAI API key"
         assert_includes error.message, "OPEN_AI_API_KEY"
-        assert_includes error.message, "CLEO_QUALITY_LLM_COMMAND"
+        assert_includes error.message, "CLEO_QUALITY_REVIEW_LLM_COMMAND"
       end
     end
   end

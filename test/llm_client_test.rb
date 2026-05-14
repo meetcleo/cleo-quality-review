@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require_relative "test_helper"
-require "cleo_quality/llm_client"
+require "cleo_quality_review/llm_client"
 
-module CleoQuality
+module CleoQualityReview
   class LlmClientTest < Minitest::Test
     FakeProvider = Struct.new(:validated_config, keyword_init: true) do
       def validate_config(config)
@@ -24,17 +24,17 @@ module CleoQuality
     FakeCommandRunner = Struct.new(:received_stdin, keyword_init: true) do
       def run(*, env: {}, stdin_data: nil)
         self.received_stdin = stdin_data
-        CleoQuality::CommandResult.new(
+        CleoQualityReview::CommandResult.new(
           stdout: "command review",
           stderr: "",
-          status: CleoQualityTestHelpers::Status.new(true),
+          status: CleoQualityReviewTestHelpers::Status.new(true),
         )
       end
     end
 
     def test_supports_command_provider
       command_runner = FakeCommandRunner.new
-      config = LlmConfig.new(env: { "CLEO_QUALITY_LLM_PROVIDER" => "command", "CLEO_QUALITY_LLM_COMMAND" => "llm" })
+      config = LlmConfig.new(env: { "CLEO_QUALITY_REVIEW_LLM_PROVIDER" => "command", "CLEO_QUALITY_REVIEW_LLM_COMMAND" => "llm" })
 
       output = LlmClient.new(config: config, command_runner: command_runner).generate_review("prompt")
 
@@ -45,7 +45,7 @@ module CleoQuality
     def test_supports_registered_provider
       provider = FakeProvider.new
       registry = LlmProviderRegistry.new(providers: { "fake" => provider })
-      config = LlmConfig.new(env: { "CLEO_QUALITY_LLM_PROVIDER" => "fake" })
+      config = LlmConfig.new(env: { "CLEO_QUALITY_REVIEW_LLM_PROVIDER" => "fake" })
 
       output = LlmClient.new(config: config, provider_registry: registry).generate_review("prompt")
 
@@ -55,7 +55,7 @@ module CleoQuality
 
     def test_rejects_unregistered_provider
       registry = LlmProviderRegistry.new(providers: {})
-      config = LlmConfig.new(env: { "CLEO_QUALITY_LLM_PROVIDER" => "missing" })
+      config = LlmConfig.new(env: { "CLEO_QUALITY_REVIEW_LLM_PROVIDER" => "missing" })
 
       error = assert_raises(UnsupportedLlmProviderError) do
         LlmClient.new(config: config, provider_registry: registry)
@@ -65,7 +65,7 @@ module CleoQuality
     end
 
     def test_rejects_missing_openai_configuration
-      config = LlmConfig.new(env: { "CLEO_QUALITY_LLM_PROVIDER" => "openai" })
+      config = LlmConfig.new(env: { "CLEO_QUALITY_REVIEW_LLM_PROVIDER" => "openai" })
 
       error = assert_raises(MissingLlmConfigurationError) do
         LlmClient.new(config: config)

@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require_relative "../test_helper"
-require "cleo_quality/checks/fasterer"
-require "cleo_quality/checks/flog"
-require "cleo_quality/checks/reek"
+require "cleo_quality_review/checks/fasterer"
+require "cleo_quality_review/checks/flog"
+require "cleo_quality_review/checks/reek"
 
-module CleoQuality
+module CleoQualityReview
   module Checks
     class ParsersTest < Minitest::Test
       FakeCommandRunner = Struct.new(:command_result, keyword_init: true) do

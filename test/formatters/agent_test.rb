@@ -2,12 +2,12 @@
 
 require "json"
 require_relative "../test_helper"
-require "cleo_quality/formatters/agent"
-require "cleo_quality/result"
-require "cleo_quality/run"
-require "cleo_quality/run_artifacts"
+require "cleo_quality_review/formatters/agent"
+require "cleo_quality_review/result"
+require "cleo_quality_review/run"
+require "cleo_quality_review/run_artifacts"
 
-module CleoQuality
+module CleoQualityReview
   module Formatters
     class AgentTest < Minitest::Test
       def test_prints_single_json_document

@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require_relative "test_helper"
-require "cleo_quality/target_resolver"
+require "cleo_quality_review/target_resolver"
 
-module CleoQuality
+module CleoQualityReview
   class TargetResolverTest < Minitest::Test
     FakeCommandRunner = Struct.new(:results, keyword_init: true) do
       def run(*command)

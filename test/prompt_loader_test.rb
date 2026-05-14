@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
 require_relative "test_helper"
-require "cleo_quality/prompt_loader"
+require "cleo_quality_review/prompt_loader"
 
-module CleoQuality
+module CleoQualityReview
   class PromptLoaderTest < Minitest::Test
     def test_uses_local_prompt_override_when_present
       in_tmpdir do
-        FileUtils.mkdir_p(".cleo_quality")
-        File.write(".cleo_quality/agent.md", "local agent prompt")
+        FileUtils.mkdir_p(".cleo_quality_review")
+        File.write(".cleo_quality_review/agent.md", "local agent prompt")
 
         assert_equal "local agent prompt", PromptLoader.load(format: "agent")
       end
@@ -16,8 +16,8 @@ module CleoQuality
 
     def test_uses_local_nested_prompt_override_when_present
       in_tmpdir do
-        FileUtils.mkdir_p(".cleo_quality/prompts")
-        File.write(".cleo_quality/prompts/github.md", "local github prompt")
+        FileUtils.mkdir_p(".cleo_quality_review/prompts")
+        File.write(".cleo_quality_review/prompts/github.md", "local github prompt")
 
         assert_equal "local github prompt", PromptLoader.load(format: "github")
       end
@@ -25,8 +25,8 @@ module CleoQuality
 
     def test_supports_legacy_human_prompt_override
       in_tmpdir do
-        FileUtils.mkdir_p(".cleo_quality")
-        File.write(".cleo_quality/prompt.md", "legacy human prompt")
+        FileUtils.mkdir_p(".cleo_quality_review")
+        File.write(".cleo_quality_review/prompt.md", "legacy human prompt")
 
         assert_equal "legacy human prompt", PromptLoader.load(format: "human")
       end
