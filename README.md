@@ -10,7 +10,7 @@ bundle exec check_quality --format github --checks fasterer --files app/services
 OPEN_AI_API_KEY=... bundle exec check_quality --format human --files app/models/example.rb
 ```
 
-`--files` accepts files or directories. Directories are expanded recursively; Ruby files are checked and all expanded files are available as prompt context. When `--files` is omitted, `check_quality` targets changed Ruby files from `origin/main...HEAD`.
+`--files` accepts files or directories. Directories are expanded recursively, then filtered by the active config. When `--files` is omitted, `check_quality` targets changed files from `origin/main...HEAD` that match the active config.
 
 ## Checks
 
@@ -29,6 +29,25 @@ Prompts are format-specific:
 - `github`
 
 Local overrides are loaded first from `.cleo_quality_review/prompts/<format>.md`, then `.cleo_quality_review/<format>.md`. For backwards compatibility, `human` also supports `.cleo_quality_review/prompt.md`. If no local prompt exists, the gem uses `vendor/cleo_quality_review/prompts/<format>.md`.
+
+## File Configuration
+
+Target files are configured with RuboCop-style YAML. The gem always loads its default config, then optionally loads `.cleo_quality_review.yaml` from the repository root.
+
+```yaml
+inherit_from:
+  - ~/.config/cleo_quality_review.yml
+
+AllCops:
+  Include:
+    - "**/*.rb"
+    - "**/*.rake"
+  Exclude:
+    - "vendor/**/*"
+    - "db/schema.rb"
+```
+
+`inherit_from` accepts a string or list of config files. Relative paths are resolved from the config file that declares them, and `~` can be used for user-level preferences. The special values `default` and `gem:default` point at the gem's bundled default config.
 
 ## LLM Configuration
 

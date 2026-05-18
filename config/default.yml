@@ -1,0 +1,7 @@
+AllCops:
+  Include:
+    - "**/*.rb"
+  Exclude:
+    - "tmp/**/*"
+    - "vendor/**/*"
+    - "node_modules/**/*"

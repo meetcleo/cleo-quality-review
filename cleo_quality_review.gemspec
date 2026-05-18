@@ -16,7 +16,7 @@ Gem::Specification.new do |spec|
   spec.metadata["rubygems_mfa_required"] = "true"
 
   spec.files =
-    Dir.glob("{#{File.basename(__FILE__)},exe/**/*,lib/**/*,prompts/**/*}", File::FNM_DOTMATCH).select do |path|
+    Dir.glob("{#{File.basename(__FILE__)},config/**/*,exe/**/*,lib/**/*,prompts/**/*}", File::FNM_DOTMATCH).select do |path|
       File.file?(path) && !File.symlink?(path)
     end
 

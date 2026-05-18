@@ -28,7 +28,7 @@ module CleoQualityReview
       end
 
       def parse_line(line)
-        match = line.match(/^\s*(?<score>\d+(?:\.\d+)?):\s+(?<subject>.+?)\s+(?<filepath>[^:\s]+\.rb):(?<line>\d+)/)
+        match = line.match(/^\s*(?<score>\d+(?:\.\d+)?):\s+(?<subject>.+?)\s+(?<filepath>[^:\s]+):(?<line>\d+)/)
         return unless match
 
         result(

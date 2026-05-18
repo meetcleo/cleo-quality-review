@@ -55,7 +55,7 @@ module CleoQualityReview
       end
     end
 
-    def test_explicit_files_can_include_non_ruby_prompt_context
+    def test_explicit_files_are_filtered_by_default_config
       in_tmpdir do
         FileUtils.mkdir_p("app/models")
         File.write("app/models/user.rb", "# frozen_string_literal: true\n")
@@ -63,8 +63,25 @@ module CleoQualityReview
 
         target = TargetResolver.new(command_runner: FakeCommandRunner.new).resolve(["app/models/user.rb", "README.md"])
 
-        assert_equal ["app/models/user.rb", "README.md"], target.files
+        assert_equal ["app/models/user.rb"], target.files
         assert_equal ["app/models/user.rb"], target.ruby_files
+      end
+    end
+
+    def test_local_config_can_include_additional_extensions
+      in_tmpdir do
+        FileUtils.mkdir_p("lib/tasks")
+        File.write("lib/tasks/import.rake", "task :import\n")
+        File.write(".cleo_quality_review.yaml", <<~YAML)
+          AllCops:
+            Include:
+              - "**/*.rake"
+        YAML
+
+        target = TargetResolver.new(command_runner: FakeCommandRunner.new).resolve(["lib/tasks/import.rake"])
+
+        assert_equal ["lib/tasks/import.rake"], target.files
+        assert_equal ["lib/tasks/import.rake"], target.ruby_files
       end
     end
 
@@ -77,8 +94,25 @@ module CleoQualityReview
 
         target = TargetResolver.new(command_runner: FakeCommandRunner.new).resolve(["app/models"])
 
-        assert_equal ["app/models/README.md", "app/models/nested/account.rb", "app/models/user.rb"], target.files
+        assert_equal ["app/models/nested/account.rb", "app/models/user.rb"], target.files
         assert_equal ["app/models/nested/account.rb", "app/models/user.rb"], target.ruby_files
+      end
+    end
+
+    def test_local_config_excludes_files_by_location
+      in_tmpdir do
+        FileUtils.mkdir_p("app/models/generated")
+        File.write("app/models/user.rb", "# frozen_string_literal: true\n")
+        File.write("app/models/generated/user.rb", "# frozen_string_literal: true\n")
+        File.write(".cleo_quality_review.yaml", <<~YAML)
+          AllCops:
+            Exclude:
+              - "app/models/generated/**/*"
+        YAML
+
+        target = TargetResolver.new(command_runner: FakeCommandRunner.new).resolve(["app/models"])
+
+        assert_equal ["app/models/user.rb"], target.files
       end
     end
 

@@ -1,33 +1,41 @@
 # frozen_string_literal: true
 
+require_relative "configuration"
+
 module CleoQualityReview
   class TargetResolver
     BASE_REF = "origin/main"
-    RUBY_EXTENSION = ".rb"
 
     Target = Struct.new(:files, :ruby_files, keyword_init: true)
 
-    def initialize(command_runner:)
+    def initialize(command_runner:, configuration: Configuration.load)
       @command_runner = command_runner
+      @configuration = configuration
     end
 
     def resolve(files)
-      target_files = files.empty? ? changed_ruby_files : expand_target_paths(files)
+      target_files = resolve_target_files(files)
 
       Target.new(
         files: target_files,
-        ruby_files: target_files.select { |path| ruby_file?(path) },
+        ruby_files: target_files,
       )
     end
 
     private
 
-    attr_reader :command_runner
+    attr_reader :command_runner, :configuration
 
-    def changed_ruby_files
-      (tracked_changed_files + untracked_files).uniq.select do |path|
-        ruby_file?(path) && File.file?(path)
+    def resolve_target_files(files)
+      candidates = files.empty? ? changed_files : expand_target_paths(files)
+
+      candidates.select do |path|
+        File.file?(path) && configuration.target_file?(path)
       end
+    end
+
+    def changed_files
+      (tracked_changed_files + untracked_files).uniq
     end
 
     def tracked_changed_files
@@ -75,10 +83,6 @@ module CleoQualityReview
       Dir.glob(File.join(path, "**", "*"), File::FNM_DOTMATCH).sort.select do |expanded_path|
         File.file?(expanded_path)
       end
-    end
-
-    def ruby_file?(path)
-      File.extname(path) == RUBY_EXTENSION
     end
   end
 end

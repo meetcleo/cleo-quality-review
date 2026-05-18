@@ -37,26 +37,26 @@ module CleoQualityReview
       end
 
       def test_flog_parser_normalizes_method_scores
-        output = "    12.3: Example#perform app/example.rb:8-14\n"
+        output = "    12.3: Example#perform lib/tasks/import.rake:8-14\n"
 
-        result = Flog.new(command_runner: runner(output), timestamp: 123).run(["app/example.rb"]).results.first
+        result = Flog.new(command_runner: runner(output), timestamp: 123).run(["lib/tasks/import.rake"]).results.first
 
         assert_equal "flog", result.tool
         assert_equal "Complexity", result.check
         assert_equal "12.3: Example#perform", result.result
-        assert_equal "app/example.rb", result.filepath
+        assert_equal "lib/tasks/import.rake", result.filepath
         assert_equal 8, result.line
       end
 
       def test_fasterer_parser_normalizes_findings
-        output = "app/example.rb:5 Use Hash#each_key instead of Hash#keys.each.\n"
+        output = "\e[31mlib/tasks/import.rake:5\e[0m Use Hash#each_key instead of Hash#keys.each.\n"
 
-        result = Fasterer.new(command_runner: runner(output), timestamp: 123).run(["app/example.rb"]).results.first
+        result = Fasterer.new(command_runner: runner(output), timestamp: 123).run(["lib/tasks/import.rake"]).results.first
 
         assert_equal "fasterer", result.tool
         assert_equal "Performance", result.check
         assert_equal "Use Hash#each_key instead of Hash#keys.each.", result.result
-        assert_equal "app/example.rb", result.filepath
+        assert_equal "lib/tasks/import.rake", result.filepath
         assert_equal 5, result.line
       end
 

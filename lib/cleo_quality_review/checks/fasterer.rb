@@ -28,7 +28,7 @@ module CleoQualityReview
       end
 
       def parse_line(line)
-        match = line.match(/^(?<filepath>.+?\.rb):(?<line>\d+):?\s+(?<message>.+)$/)
+        match = strip_ansi(line).match(/^(?<filepath>.+?):(?<line>\d+):?\s+(?<message>.+)$/)
         return unless match
 
         result(
@@ -37,6 +37,10 @@ module CleoQualityReview
           filepath: match[:filepath],
           line: match[:line],
         )
+      end
+
+      def strip_ansi(value)
+        value.to_s.gsub(/\e\[[\d;]*m/, "")
       end
     end
   end
