@@ -104,5 +104,43 @@ module CleoQualityReview
         assert git_commands.any? { |cmd| cmd.include?("merge-base") }, "Should call git merge-base when no files provided"
       end
     end
+
+    def test_exclude_removes_specified_checks
+      in_tmpdir do
+        FileUtils.mkdir_p("app")
+        File.write("app/example.rb", "# frozen_string_literal: true\n")
+
+        check_registry = FakeCheckRegistry.new
+        runner = Runner.new(
+          options: Options::ParseResult.new(format: "agent", checks: ["all"], files: [], exclude: ["fake"], changed: false),
+          command_runner: FakeCommandRunner.new(calls: []),
+          clock: FakeClock.new(now: Time.at(123)),
+          check_registry: check_registry,
+        )
+
+        run = runner.run
+
+        assert_equal [], run.checks
+      end
+    end
+
+    def test_only_and_exclude_combined_exclude_takes_precedence
+      in_tmpdir do
+        FileUtils.mkdir_p("app")
+        File.write("app/example.rb", "# frozen_string_literal: true\n")
+
+        check_registry = FakeCheckRegistry.new
+        runner = Runner.new(
+          options: Options::ParseResult.new(format: "agent", checks: ["fake"], files: [], exclude: ["fake"], changed: false),
+          command_runner: FakeCommandRunner.new(calls: []),
+          clock: FakeClock.new(now: Time.at(123)),
+          check_registry: check_registry,
+        )
+
+        run = runner.run
+
+        assert_equal [], run.checks
+      end
+    end
   end
 end

@@ -86,9 +86,9 @@
 ### Tests for User Story 2
 
 No new tests needed - existing formatter tests cover this functionality. Verify with:
-- [ ] T019 [US2] Verify test/formatters/agent_test.rb passes
-- [ ] T020 [US2] Verify test/formatters/github_test.rb passes
-- [ ] T021 [US2] Verify test/human_formatter_test.rb passes
+- [x] T019 [US2] Verify test/formatters/agent_test.rb passes
+- [x] T020 [US2] Verify test/formatters/github_test.rb passes
+- [x] T021 [US2] Verify test/human_formatter_test.rb passes
 
 ### Implementation for User Story 2
 
@@ -106,16 +106,16 @@ No implementation needed - output formats are already complete per research.md.
 
 ### Tests for User Story 3
 
-- [ ] T022 [P] [US3] Add test: `--only` filters to specified checks in test/runner_test.rb
-- [ ] T023 [P] [US3] Add test: `--exclude` removes specified checks in test/runner_test.rb
-- [ ] T024 [P] [US3] Add test: invalid tool name in `--only` returns error in test/runner_test.rb
-- [ ] T025 [P] [US3] Add test: `--only` and `--exclude` combined in test/runner_test.rb
+- [x] T022 [P] [US3] Add test: `--only` filters to specified checks in test/runner_test.rb (already covered by existing --checks tests)
+- [x] T023 [P] [US3] Add test: `--exclude` removes specified checks in test/runner_test.rb
+- [x] T024 [P] [US3] Add test: invalid tool name in `--only` returns error in test/runner_test.rb (existing in check_registry_test.rb)
+- [x] T025 [P] [US3] Add test: `--only` and `--exclude` combined in test/runner_test.rb
 
 ### Implementation for User Story 3
 
-- [ ] T026 [US3] Implement check exclusion logic in Runner in lib/cleo_quality_review/runner.rb
-- [ ] T027 [US3] Add validation for invalid tool names in Runner in lib/cleo_quality_review/runner.rb
-- [ ] T028 [US3] Handle `--only` and `--exclude` combination (exclude takes precedence) in lib/cleo_quality_review/runner.rb
+- [x] T026 [US3] Implement check exclusion logic in Runner in lib/cleo_quality_review/runner.rb
+- [x] T027 [US3] Add validation for invalid tool names in Runner in lib/cleo_quality_review/runner.rb (handled by CheckRegistry)
+- [x] T028 [US3] Handle `--only` and `--exclude` combination (exclude takes precedence) in lib/cleo_quality_review/runner.rb
 
 **Checkpoint**: User Story 3 complete - tool filtering works correctly
 

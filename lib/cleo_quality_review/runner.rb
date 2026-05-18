@@ -25,7 +25,7 @@ module CleoQualityReview
         command_runner: command_runner,
       ).prepare!
 
-      check_classes = check_registry.resolve(options.checks)
+      check_classes = resolve_checks
       check_outputs = run_checks(check_classes, target.ruby_files, timestamp)
 
       check_outputs.each do |output|
@@ -54,6 +54,14 @@ module CleoQualityReview
 
     def epoch_milliseconds
       (clock.now.to_r * 1_000).to_i
+    end
+
+    def resolve_checks
+      all_checks = check_registry.resolve(options.checks)
+      return all_checks if options.exclude.empty?
+
+      excluded_names = options.exclude.map(&:downcase)
+      all_checks.reject { |check_class| excluded_names.include?(check_class.check_name.downcase) }
     end
 
     def run_checks(check_classes, ruby_files, timestamp)
