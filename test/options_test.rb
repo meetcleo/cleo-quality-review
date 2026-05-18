@@ -41,5 +41,41 @@ module CleoQualityReview
 
       assert_includes error.message, "invalid argument"
     end
+
+    def test_parses_only_as_alias_for_checks
+      options = Options.parse(["--only", "reek,flog"])
+
+      assert_equal %w[reek flog], options.checks
+    end
+
+    def test_parses_exclude_flag
+      options = Options.parse(["--exclude", "flog,fasterer"])
+
+      assert_equal %w[flog fasterer], options.exclude
+    end
+
+    def test_parses_repeated_exclude_flags
+      options = Options.parse(["--exclude", "flog", "--exclude", "fasterer"])
+
+      assert_equal %w[flog fasterer], options.exclude
+    end
+
+    def test_parses_changed_flag
+      options = Options.parse(["--changed"])
+
+      assert_predicate options, :changed
+    end
+
+    def test_changed_defaults_to_false
+      options = Options.parse([])
+
+      refute_predicate options, :changed
+    end
+
+    def test_exclude_defaults_to_empty_array
+      options = Options.parse([])
+
+      assert_equal [], options.exclude
+    end
   end
 end

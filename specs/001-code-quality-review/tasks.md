@@ -27,8 +27,8 @@
 
 **Purpose**: Validate existing implementation and align spec with code
 
-- [ ] T001 Update spec.md to use `check_quality` instead of `quality_review` per constitution in specs/001-code-quality-review/spec.md
-- [ ] T002 Run `bundle exec rake test` to verify existing tests pass
+- [x] T001 Update spec.md to use `check_quality` instead of `quality_review` per constitution in specs/001-code-quality-review/spec.md
+- [x] T002 Run `bundle exec rake test` to verify existing tests pass (49 tests, 144 assertions)
 
 **Checkpoint**: Existing codebase validated, spec aligned with constitution
 
@@ -40,15 +40,15 @@
 
 **CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T003 Add `exclude` field to ParseResult struct in lib/cleo_quality_review/options.rb
-- [ ] T004 Add `changed` boolean field to ParseResult struct in lib/cleo_quality_review/options.rb
-- [ ] T005 [P] Add test for `--only` alias parsing in test/options_test.rb
-- [ ] T006 [P] Add test for `--exclude` flag parsing in test/options_test.rb
-- [ ] T007 [P] Add test for `--changed` flag parsing in test/options_test.rb
-- [ ] T008 Implement `--only` as alias for `--checks` in lib/cleo_quality_review/options.rb
-- [ ] T009 Implement `--exclude` flag parsing in lib/cleo_quality_review/options.rb
-- [ ] T010 Implement `--changed` flag parsing in lib/cleo_quality_review/options.rb
-- [ ] T011 Update help text to document all flags in lib/cleo_quality_review/options.rb
+- [x] T003 Add `exclude` field to ParseResult struct in lib/cleo_quality_review/options.rb
+- [x] T004 Add `changed` boolean field to ParseResult struct in lib/cleo_quality_review/options.rb
+- [x] T005 [P] Add test for `--only` alias parsing in test/options_test.rb
+- [x] T006 [P] Add test for `--exclude` flag parsing in test/options_test.rb
+- [x] T007 [P] Add test for `--changed` flag parsing in test/options_test.rb
+- [x] T008 Implement `--only` as alias for `--checks` in lib/cleo_quality_review/options.rb
+- [x] T009 Implement `--exclude` flag parsing in lib/cleo_quality_review/options.rb
+- [x] T010 Implement `--changed` flag parsing in lib/cleo_quality_review/options.rb
+- [x] T011 Update help text to document all flags in lib/cleo_quality_review/options.rb
 
 **Checkpoint**: Foundation ready - all new flags parse correctly, tests pass
 
