@@ -17,7 +17,8 @@ module CleoQualityReview
 
     def run
       timestamp = epoch_milliseconds
-      target = TargetResolver.new(command_runner: command_runner).resolve(options.files)
+      changed = options.changed || options.files.empty?
+      target = TargetResolver.new(command_runner: command_runner).resolve(options.files, changed: changed)
       artifacts = RunArtifacts.new(
         timestamp: timestamp,
         target_files: target.files,

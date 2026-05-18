@@ -66,7 +66,7 @@ module CleoQualityReview
         command_runner = FakeCommandRunner.new(calls: [])
         check_registry = FakeCheckRegistry.new
         runner = Runner.new(
-          options: Options::ParseResult.new(format: "agent", checks: ["fake"], files: []),
+          options: Options::ParseResult.new(format: "agent", checks: ["fake"], files: [], exclude: [], changed: false),
           command_runner: command_runner,
           clock: FakeClock.new(now: Time.at(123)),
           check_registry: check_registry,
@@ -82,6 +82,26 @@ module CleoQualityReview
         assert_equal "diff --git a/app/example.rb b/app/example.rb\n", File.read("tmp/quality_checks/123000/changes.diff")
         assert_equal "", File.read("tmp/quality_checks/123000/fake/raw_output.txt")
         assert_equal "", run.artifacts.raw_check_outputs.fetch("fake")
+      end
+    end
+
+    def test_defaults_to_changed_mode_when_no_files_provided
+      in_tmpdir do
+        FileUtils.mkdir_p("app")
+        File.write("app/example.rb", "# frozen_string_literal: true\n")
+
+        command_runner = FakeCommandRunner.new(calls: [])
+        runner = Runner.new(
+          options: Options::ParseResult.new(format: "agent", checks: ["fake"], files: [], exclude: [], changed: false),
+          command_runner: command_runner,
+          clock: FakeClock.new(now: Time.at(123)),
+          check_registry: FakeCheckRegistry.new,
+        )
+
+        runner.run
+
+        git_commands = command_runner.calls.select { |cmd| cmd.first == "git" }
+        assert git_commands.any? { |cmd| cmd.include?("merge-base") }, "Should call git merge-base when no files provided"
       end
     end
   end

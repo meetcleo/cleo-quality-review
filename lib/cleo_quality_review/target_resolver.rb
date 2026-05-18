@@ -13,8 +13,13 @@ module CleoQualityReview
       @configuration = configuration
     end
 
-    def resolve(files)
-      target_files = resolve_target_files(files)
+    ##
+    # Resolve target files for quality review
+    # @param [Array<String>] files explicit file paths
+    # @param [Boolean] changed when true, filter to git-changed files only
+    # @return [Target]
+    def resolve(files, changed: false)
+      target_files = resolve_target_files(files, changed: changed)
 
       Target.new(
         files: target_files,
@@ -26,12 +31,23 @@ module CleoQualityReview
 
     attr_reader :command_runner, :configuration
 
-    def resolve_target_files(files)
-      candidates = files.empty? ? changed_files : expand_target_paths(files)
+    def resolve_target_files(files, changed:)
+      candidates = if files.empty?
+        changed_files
+      elsif changed
+        filter_to_changed(expand_target_paths(files))
+      else
+        expand_target_paths(files)
+      end
 
       candidates.select do |path|
         File.file?(path) && configuration.target_file?(path)
       end
+    end
+
+    def filter_to_changed(paths)
+      git_changed = changed_files
+      paths.select { |path| git_changed.include?(path) }
     end
 
     def changed_files

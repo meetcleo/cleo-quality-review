@@ -62,16 +62,16 @@
 
 ### Tests for User Story 1
 
-- [ ] T012 [P] [US1] Add test: explicit files override git diff behavior in test/target_resolver_test.rb
-- [ ] T013 [P] [US1] Add test: `--changed` flag forces git diff mode in test/target_resolver_test.rb
-- [ ] T014 [P] [US1] Add test: no args defaults to changed mode in test/runner_test.rb
+- [x] T012 [P] [US1] Add test: explicit files override git diff behavior in test/target_resolver_test.rb
+- [x] T013 [P] [US1] Add test: `--changed` flag forces git diff mode in test/target_resolver_test.rb
+- [x] T014 [P] [US1] Add test: no args defaults to changed mode in test/runner_test.rb
 
 ### Implementation for User Story 1
 
-- [ ] T015 [US1] Modify TargetResolver to accept `changed` flag in lib/cleo_quality_review/target_resolver.rb
-- [ ] T016 [US1] When explicit files provided and `changed` is false, skip git diff filtering in lib/cleo_quality_review/target_resolver.rb
-- [ ] T017 [US1] Update Runner to pass `changed` flag to TargetResolver in lib/cleo_quality_review/runner.rb
-- [ ] T018 [US1] Update CLI to set default `changed: true` when no files provided in lib/cleo_quality_review/cli.rb
+- [x] T015 [US1] Modify TargetResolver to accept `changed` flag in lib/cleo_quality_review/target_resolver.rb
+- [x] T016 [US1] When explicit files provided and `changed` is false, skip git diff filtering in lib/cleo_quality_review/target_resolver.rb
+- [x] T017 [US1] Update Runner to pass `changed` flag to TargetResolver in lib/cleo_quality_review/runner.rb
+- [x] T018 [US1] Update CLI to set default `changed: true` when no files provided in lib/cleo_quality_review/cli.rb (handled in Runner)
 
 **Checkpoint**: User Story 1 complete - explicit files work without git filtering, `--changed` works explicitly
 

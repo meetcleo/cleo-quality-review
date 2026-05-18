@@ -123,5 +123,41 @@ module CleoQualityReview
 
       assert_includes error.message, "Path not found"
     end
+
+    def test_explicit_files_skip_git_diff_when_changed_is_false
+      in_tmpdir do
+        FileUtils.mkdir_p("app/models")
+        File.write("app/models/user.rb", "# frozen_string_literal: true\n")
+
+        command_runner = FakeCommandRunner.new(results: {})
+        resolver = TargetResolver.new(command_runner: command_runner)
+
+        target = resolver.resolve(["app/models/user.rb"], changed: false)
+
+        assert_equal ["app/models/user.rb"], target.files
+      end
+    end
+
+    def test_changed_flag_forces_git_diff_mode
+      in_tmpdir do
+        FileUtils.mkdir_p("app/models")
+        File.write("app/models/user.rb", "# frozen_string_literal: true\n")
+        File.write("app/models/account.rb", "# frozen_string_literal: true\n")
+
+        resolver = TargetResolver.new(
+          command_runner: FakeCommandRunner.new(
+            results: {
+              ["git", "merge-base", "origin/main", "HEAD"] => command_result(stdout: "base-sha\n"),
+              ["git", "diff", "--name-only", "--diff-filter=ACMRT", "base-sha"] => command_result(stdout: "app/models/user.rb\n"),
+              ["git", "ls-files", "--others", "--exclude-standard"] => command_result(stdout: ""),
+            },
+          ),
+        )
+
+        target = resolver.resolve(["app/models/user.rb", "app/models/account.rb"], changed: true)
+
+        assert_equal ["app/models/user.rb"], target.files
+      end
+    end
   end
 end
