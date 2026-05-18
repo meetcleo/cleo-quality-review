@@ -77,5 +77,17 @@ module CleoQualityReview
 
       assert_equal [], options.exclude
     end
+
+    def test_positional_arguments_are_treated_as_files
+      options = Options.parse(["lib/foo.rb", "lib/bar.rb"])
+
+      assert_equal ["lib/foo.rb", "lib/bar.rb"], options.files
+    end
+
+    def test_positional_arguments_combine_with_files_flag
+      options = Options.parse(["--files", "lib/a.rb", "lib/b.rb", "lib/c.rb"])
+
+      assert_equal ["lib/a.rb", "lib/b.rb", "lib/c.rb"], options.files
+    end
   end
 end

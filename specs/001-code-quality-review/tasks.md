@@ -143,14 +143,14 @@ No implementation needed - output formats are already complete per research.md.
 
 **Purpose**: Final validation and documentation
 
-- [ ] T031 Run full test suite with `bundle exec rake test`
-- [ ] T032 Manual test: `exe/check_quality --help` shows all new flags
-- [ ] T033 Manual test: `exe/check_quality --only reek lib/cleo_quality_review/cli.rb`
-- [ ] T034 Manual test: `exe/check_quality --exclude flog lib/cleo_quality_review/cli.rb`
-- [ ] T035 Manual test: `exe/check_quality --changed`
-- [ ] T036 Manual test: `exe/check_quality lib/cleo_quality_review/cli.rb` (no git filter)
-- [ ] T037 Verify agent format JSON matches contracts/agent-output.md schema
-- [ ] T038 Update quickstart.md if any examples need correction in specs/001-code-quality-review/quickstart.md
+- [x] T031 Run full test suite with `bundle exec rake test` (63 tests, 160 assertions)
+- [x] T032 Manual test: `exe/check_quality --help` shows all new flags
+- [x] T033 Manual test: `exe/check_quality --only reek lib/cleo_quality_review/cli.rb`
+- [x] T034 Manual test: `exe/check_quality --exclude flog lib/cleo_quality_review/cli.rb`
+- [x] T035 Manual test: `exe/check_quality --changed`
+- [x] T036 Manual test: `exe/check_quality lib/cleo_quality_review/cli.rb` (no git filter)
+- [x] T037 Verify agent format JSON matches contracts/agent-output.md schema
+- [x] T038 Update quickstart.md if any examples need correction in specs/001-code-quality-review/quickstart.md (no updates needed)
 
 ---
 

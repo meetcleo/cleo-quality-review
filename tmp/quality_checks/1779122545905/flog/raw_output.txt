@@ -1,0 +1,5 @@
+    22.8: flog total
+    11.4: flog/method average
+
+    19.5: CleoQualityReview::CLI#run       lib/cleo_quality_review/cli.rb:18-28
+     3.3: CleoQualityReview::CLI#initialize lib/cleo_quality_review/cli.rb:12-16

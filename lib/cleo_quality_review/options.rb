@@ -26,6 +26,7 @@ module CleoQualityReview
     def parse
       parser.parse!(argv)
       validate_format!
+      files.concat(argv)
 
       ParseResult.new(
         format: format,
