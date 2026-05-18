@@ -142,5 +142,38 @@ module CleoQualityReview
         assert_equal [], run.checks
       end
     end
+
+    def test_changed_with_no_git_changes_returns_empty_target_files
+      in_tmpdir do
+        FileUtils.mkdir_p("app")
+        File.write("app/example.rb", "# frozen_string_literal: true\n")
+
+        command_runner = FakeCommandRunner.new(calls: [])
+        command_runner.define_singleton_method(:run) do |*command, env: {}|
+          calls << command
+          case command
+          when ["git", "merge-base", "origin/main", "HEAD"]
+            CleoQualityReview::CommandResult.new(stdout: "base-sha\n", stderr: "", status: CleoQualityReviewTestHelpers::Status.new(true))
+          when ["git", "diff", "--name-only", "--diff-filter=ACMRT", "base-sha"]
+            CleoQualityReview::CommandResult.new(stdout: "", stderr: "", status: CleoQualityReviewTestHelpers::Status.new(true))
+          when ["git", "ls-files", "--others", "--exclude-standard"]
+            CleoQualityReview::CommandResult.new(stdout: "", stderr: "", status: CleoQualityReviewTestHelpers::Status.new(true))
+          else
+            CleoQualityReview::CommandResult.new(stdout: "", stderr: "", status: CleoQualityReviewTestHelpers::Status.new(true))
+          end
+        end
+
+        runner = Runner.new(
+          options: Options::ParseResult.new(format: "agent", checks: ["fake"], files: [], exclude: [], changed: true),
+          command_runner: command_runner,
+          clock: FakeClock.new(now: Time.at(123)),
+          check_registry: FakeCheckRegistry.new,
+        )
+
+        run = runner.run
+
+        assert_equal [], run.target_files
+      end
+    end
   end
 end

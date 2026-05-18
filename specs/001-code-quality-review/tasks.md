@@ -129,11 +129,11 @@ No implementation needed - output formats are already complete per research.md.
 
 ### Tests for User Story 4
 
-- [ ] T029 [P] [US4] Add test: `--changed` with no git changes shows "no files" message in test/runner_test.rb
+- [x] T029 [P] [US4] Add test: `--changed` with no git changes shows "no files" message in test/runner_test.rb
 
 ### Implementation for User Story 4
 
-- [ ] T030 [US4] Add user-friendly message when `--changed` finds no files in lib/cleo_quality_review/runner.rb
+- [x] T030 [US4] Add user-friendly message when `--changed` finds no files in lib/cleo_quality_review/runner.rb (returns empty target_files, formatter handles display)
 
 **Checkpoint**: User Story 4 complete - explicit `--changed` flag works correctly
 
