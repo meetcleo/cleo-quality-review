@@ -23,7 +23,7 @@ module CleoQualityReview
     #   @return [Array<String>] checks to exclude
     # @!attribute [r] changed
     #   @return [Boolean] whether to filter to changed files only
-    ParseResult = Struct.new(:format, :checks, :files, :exclude, :changed, :log, keyword_init: true)
+    ParseResult = Struct.new(:format, :checks, :files, :exclude, :changed, :log, :review_id, keyword_init: true)
 
     ##
     # Parse command-line arguments
@@ -44,6 +44,7 @@ module CleoQualityReview
       @exclude = []
       @changed = false
       @log = false
+      @review_id = nil
     end
 
     ##
@@ -62,12 +63,13 @@ module CleoQualityReview
         exclude: exclude,
         changed: changed,
         log: log,
+        review_id: review_id,
       )
     end
 
     private
 
-    attr_reader :argv, :format, :checks, :files, :exclude, :changed, :log
+    attr_reader :argv, :format, :checks, :files, :exclude, :changed, :log, :review_id
 
     def parser
       OptionParser.new do |opts|
@@ -99,6 +101,10 @@ module CleoQualityReview
 
         opts.on("--log", "Log LLM queries and responses to log/[provider].log") do
           @log = true
+        end
+
+        opts.on("--review-id REVIEW_ID", "Reuse an existing analysis artifact by review ID") do |value|
+          @review_id = value
         end
 
         opts.on("-h", "--help", "Print help") do

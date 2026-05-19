@@ -96,6 +96,12 @@ module CleoQualityReview
       assert_predicate options, :log
     end
 
+    def test_parses_review_id
+      options = Options.parse(["--review-id", "abc123"])
+
+      assert_equal "abc123", options.review_id
+    end
+
     def test_log_defaults_to_false
       options = Options.parse([])
 

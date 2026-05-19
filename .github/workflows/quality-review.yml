@@ -9,6 +9,7 @@ name: Quality Review
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   quality-review:
@@ -65,5 +66,18 @@ jobs:
       - name: Show files compared with main
         run: git diff --name-only --diff-filter=ACMRT origin/main...HEAD
 
-      - name: Run quality review
-        run: bundle exec check_quality --format github --checks all --changed
+      - name: Analyze quality review
+        id: analyze
+        run: |
+          review_id="$(bundle exec check_quality analyze --checks all --changed)"
+          echo "review_id=${review_id}" >> "${GITHUB_OUTPUT}"
+          echo "Review ID: ${review_id}"
+
+      - name: Render workflow annotations
+        run: bundle exec check_quality render --format github --review-id "${{ steps.analyze.outputs.review_id }}"
+
+      - name: Publish PR review
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bundle exec check_quality publish-pr-review --review-id "${{ steps.analyze.outputs.review_id }}"

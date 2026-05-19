@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require_relative "changes_diff"
 require_relative "check_registry"
 require_relative "command_runner"
 require_relative "run"
@@ -29,11 +30,14 @@ module CleoQualityReview
       timestamp = epoch_milliseconds
       changed = options.changed || options.files.empty?
       target = TargetResolver.new(command_runner: command_runner).resolve(options.files, changed: changed)
+      changes = ChangesDiff.new(target_files: target.files, command_runner: command_runner)
       artifacts = RunArtifacts.new(
         timestamp: timestamp,
+        review_id: changes.review_id,
         target_files: target.files,
-        command_runner: command_runner,
+        changes_diff: changes.to_s,
       ).prepare!
+      return artifacts.to_run(format: options.format, log: options.log) if artifacts.complete?
 
       check_classes = resolve_checks
       check_outputs = run_checks(check_classes, target.ruby_files, timestamp)
@@ -46,8 +50,9 @@ module CleoQualityReview
         )
       end
 
-      Run.new(
+      run = Run.new(
         timestamp: timestamp,
+        review_id: changes.review_id,
         format: options.format,
         checks: check_classes.map(&:check_name),
         target_files: target.files,
@@ -57,6 +62,11 @@ module CleoQualityReview
         artifacts: artifacts,
         log: options.log,
       )
+
+      artifacts.write_results(run.results)
+      artifacts.write_manifest(run)
+      artifacts.mark_complete!
+      run
     end
 
     private

@@ -15,13 +15,25 @@ CLEO_QUALITY_REVIEW_OPEN_AI_KEY=sk-... bundle exec check_quality --format human 
 
 `--files` accepts files or directories. Directories are expanded recursively, then filtered by the active config. When `--files` is omitted, `check_quality` targets changed files from `origin/main...HEAD` that match the active config.
 
+CI can split analysis from output rendering so the Ruby quality tools run once and multiple outputs reuse the same artifacts:
+
+```bash
+review_id="$(bundle exec check_quality analyze --checks all --changed)"
+bundle exec check_quality render --format github --review-id "${review_id}"
+GITHUB_TOKEN=... bundle exec check_quality publish-pr-review --review-id "${review_id}"
+```
+
+`analyze` prints the deterministic review ID for the captured diff. The artifact directory is `tmp/quality_checks/<review_id>/`, and later commands reuse it when `complete.json` is present.
+
 ## Checks
 
-The gem embeds Ruby check adapters for Reek, Flog, and Fasterer. Each run writes raw tool artifacts to `tmp/quality_checks/<epoch>/<check>/raw_output.*` and also normalizes findings for machine-readable output.
+The gem embeds Ruby check adapters for Reek, Flog, and Fasterer. Each run writes raw tool artifacts to `tmp/quality_checks/<review_id>/<check>/raw_output.*` and also normalizes findings for machine-readable output.
 
 `agent` output uses the agent prompt to condense run metadata, the git diff, raw tool outputs, and normalized findings into JSON for coding agents.
 
 `github` output uses the GitHub prompt to condense the full report into GitHub workflow annotations for the most relevant findings.
+
+`publish-pr-review` posts a GitHub pull request review using normalized findings. Findings that map to commentable right-side diff lines become inline review comments; the rest remain available through the workflow annotation output.
 
 ## Prompts
 

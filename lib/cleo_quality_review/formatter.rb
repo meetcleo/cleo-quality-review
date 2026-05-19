@@ -46,11 +46,7 @@ module CleoQualityReview
     ##
     # @return [RunArtifacts]
     def artifacts
-      @artifacts ||= run.artifacts || RunArtifacts.new(
-        timestamp: run.timestamp,
-        target_files: run.target_files,
-        command_runner: command_runner,
-      )
+      @artifacts ||= run.artifacts || RunArtifacts.load(review_id: run.review_id || run.timestamp)
     end
 
     ##

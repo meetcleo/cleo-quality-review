@@ -1,0 +1,66 @@
+# frozen_string_literal: true
+
+require "digest"
+
+require_relative "target_resolver"
+
+module CleoQualityReview
+  ##
+  # Captures the git diff used for a quality review run
+  class ChangesDiff
+    ##
+    # @param [Array<String>] target_files files included in the review
+    # @param [CommandRunner] command_runner for executing git commands
+    def initialize(target_files:, command_runner:)
+      @target_files = target_files
+      @command_runner = command_runner
+    end
+
+    ##
+    # @return [String] combined tracked and untracked diff content
+    def to_s
+      @to_s ||= [tracked_changes_diff, untracked_changes_diff].reject(&:empty?).join("\n")
+    end
+
+    ##
+    # @return [String] deterministic review identifier for this diff
+    def review_id
+      Digest::SHA256.hexdigest(to_s)
+    end
+
+    private
+
+    attr_reader :command_runner, :target_files
+
+    def tracked_changes_diff
+      command = ["git", "diff", diff_base]
+      command.concat(["--", *target_files]) unless target_files.empty?
+
+      command_runner.run(*command).stdout
+    end
+
+    def untracked_changes_diff
+      untracked_target_files.map do |filepath|
+        command_runner.run("git", "diff", "--no-index", "--", "/dev/null", filepath).stdout
+      end.reject(&:empty?).join("\n")
+    end
+
+    def untracked_target_files
+      command = ["git", "ls-files", "--others", "--exclude-standard"]
+      command.concat(["--", *target_files]) unless target_files.empty?
+
+      command_runner.run(*command).stdout.lines.map(&:strip).select do |path|
+        target_files.empty? || target_files.include?(path)
+      end
+    end
+
+    def diff_base
+      @diff_base ||= begin
+        result = command_runner.run("git", "merge-base", TargetResolver::BASE_REF, "HEAD")
+        base = result.stdout.strip
+
+        result.success? && !base.empty? ? base : TargetResolver::BASE_REF
+      end
+    end
+  end
+end

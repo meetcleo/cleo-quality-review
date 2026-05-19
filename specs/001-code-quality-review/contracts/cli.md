@@ -6,6 +6,9 @@
 
 ```
 check_quality [OPTIONS] [FILES...]
+check_quality analyze [OPTIONS] [FILES...]
+check_quality render --review-id REVIEW_ID --format FORMAT
+check_quality publish-pr-review --review-id REVIEW_ID
 ```
 
 ## Options
@@ -18,7 +21,16 @@ check_quality [OPTIONS] [FILES...]
 | `--exclude` | `-x` | string[] | none | Checks to exclude |
 | `--files` | | string[] | changed | Files/directories to check |
 | `--changed` | | flag | false | Only check files changed from main branch |
+| `--review-id` | | string | | Existing analysis artifact ID for render/publish commands |
 | `--help` | `-h` | flag | | Show help message |
+
+## Subcommands
+
+| Command | Description |
+|---------|-------------|
+| `analyze` | Resolves target files, runs configured tools, writes `tmp/quality_checks/<review_id>/`, and prints the deterministic review ID |
+| `render` | Loads completed artifacts by `--review-id` and renders the selected output format |
+| `publish-pr-review` | Loads completed artifacts by `--review-id` and posts a GitHub pull request review when running in a pull request workflow |
 
 ## Arguments
 
@@ -81,10 +93,9 @@ GitHub Actions workflow annotations:
 
 | Variable | Description |
 |----------|-------------|
-| `OPEN_AI_API_KEY` | OpenAI API key for human format |
-| `CLEO_QUALITY_REVIEW_LLM_PROVIDER` | LLM provider (default: `openai`) |
+| `CLEO_QUALITY_REVIEW_OPEN_AI_KEY` | OpenAI API key for rendered formats |
 | `CLEO_QUALITY_REVIEW_TIMEOUT_SECONDS` | OpenAI request timeout in seconds (default: 180) |
-| `CLEO_QUALITY_REVIEW_GITHUB_SUMMARY_LIMIT` | Max findings in GitHub summary (default: 5) |
+| `GITHUB_TOKEN` | GitHub token for `publish-pr-review` |
 
 ## Examples
 
@@ -112,6 +123,11 @@ check_quality --format agent
 
 # Explicit changed files mode
 check_quality --changed
+
+# Split CI analysis from output rendering/publishing
+review_id="$(check_quality analyze --changed)"
+check_quality render --format github --review-id "$review_id"
+check_quality publish-pr-review --review-id "$review_id"
 ```
 
 ## Backwards Compatibility
