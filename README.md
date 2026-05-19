@@ -1,5 +1,7 @@
 # Cleo Quality Review
 
+[![Tests](https://github.com/meetcleo/cleo-quality-review/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/meetcleo/cleo-quality-review/actions/workflows/tests.yml)
+
 Local quality checks for Cleo repositories.
 
 
@@ -8,7 +10,7 @@ Local quality checks for Cleo repositories.
 ```bash
 bundle exec check_quality --format agent --checks reek --files vendor/cleo_quality_review/lib
 bundle exec check_quality --format github --checks fasterer --files app/services/my_area
-OPEN_AI_API_KEY=... bundle exec check_quality --format human --files app/models/example.rb
+CLEO_QUALITY_REVIEW_OPEN_AI_KEY=sk-... bundle exec check_quality --format human --files app/models/example.rb
 ```
 
 `--files` accepts files or directories. Directories are expanded recursively, then filtered by the active config. When `--files` is omitted, `check_quality` targets changed files from `origin/main...HEAD` that match the active config.
@@ -53,10 +55,13 @@ AllTools:
 
 ## LLM Configuration
 
-Human output uses OpenAI's Responses API. Set `OPEN_AI_API_KEY` to enable.
+Human output uses OpenAI's Responses API.
 
-Override the API key env var name with `CLEO_QUALITY_REVIEW_OPENAI_API_KEY_ENV`.
-Override the model with `CLEO_QUALITY_REVIEW_OPENAI_MODEL` (default: `gpt-5.5`).
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `CLEO_QUALITY_REVIEW_OPEN_AI_KEY` | Yes (for `--format human`) | OpenAI API key |
+
+The model is currently fixed to `gpt-5.5`.
 
 ## Architecture
 
