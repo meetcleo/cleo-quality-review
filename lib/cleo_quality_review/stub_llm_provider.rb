@@ -30,9 +30,8 @@ module CleoQualityReview
     end
 
     ##
-    # @param [Hash{String => String}] env environment variables
+    # @param [Hash{String => String}] env environment variables (unused, for interface compatibility)
     def initialize(env: ENV)
-      @env = env
     end
 
     ##

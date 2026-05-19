@@ -13,12 +13,6 @@ module CleoQualityReview
       @env = env
     end
 
-    private
-
-    attr_reader :env
-
-    public
-
     ##
     # @return [String] environment variable name for the API key
     def api_key_env
@@ -42,5 +36,9 @@ module CleoQualityReview
     def configured?
       env.fetch(OPEN_AI_API_KEY, "").to_s.strip != ""
     end
+
+    private
+
+    attr_reader :env
   end
 end

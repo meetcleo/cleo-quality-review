@@ -10,8 +10,6 @@ module CleoQualityReview
   class RunArtifacts
     ROOT = "tmp/quality_checks"
 
-    attr_reader :timestamp, :target_files
-
     ##
     # @param [Integer] timestamp epoch milliseconds for the run
     # @param [Array<String>] target_files file paths being analyzed
@@ -69,7 +67,7 @@ module CleoQualityReview
 
     private
 
-    attr_reader :command_runner, :path
+    attr_reader :command_runner, :path, :timestamp, :target_files
 
     def reserve_path
       FileUtils.mkdir_p(ROOT)

@@ -14,12 +14,6 @@ module CleoQualityReview
       @env = env
     end
 
-    private
-
-    attr_reader :env
-
-    public
-
     ##
     # @return [String] the provider name
     def provider
@@ -38,5 +32,9 @@ module CleoQualityReview
       require_relative "stub_llm_provider"
       @stub_config ||= StubConfig.new(env: env)
     end
+
+    private
+
+    attr_reader :env
   end
 end
