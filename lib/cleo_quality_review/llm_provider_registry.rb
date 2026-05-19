@@ -1,70 +1,86 @@
 # frozen_string_literal: true
 
-require_relative "command_llm_client"
-require_relative "llm_config"
 require_relative "llm_errors"
 require_relative "open_ai_client"
 require_relative "open_ai_config"
 
 module CleoQualityReview
+  ##
+  # Registry for LLM providers. Providers can be registered externally.
+  #
+  # @example Register a custom provider
+  #   CleoQualityReview::LlmProviderRegistry.register(:custom, MyCustomProvider)
+  #
   class LlmProviderRegistry
-    def self.default
-      @default ||= new(
-        providers: {
-          LlmConfig::OPENAI_PROVIDER => OpenAiLlmProvider.new,
-          LlmConfig::COMMAND_PROVIDER => CommandLlmProvider.new,
-        },
-      )
-    end
-
-    def initialize(providers:)
-      @providers = providers
-    end
-
-    def fetch(provider)
-      providers.fetch(provider) do
-        raise UnsupportedLlmProviderError, unsupported_provider_message(provider)
+    class << self
+      ##
+      # Register a provider
+      # @param [Symbol, String] name provider identifier
+      # @param [Class] provider_class class that responds to validate_config and build_client
+      # @return [void]
+      def register(name, provider_class)
+        providers[name.to_s.downcase] = provider_class
       end
-    end
 
-    private
+      ##
+      # Fetch a provider by name
+      # @param [String] name provider identifier
+      # @return [Object] the provider instance
+      # @raise [UnsupportedLlmProviderError] if provider not found
+      def fetch(name)
+        key = name.to_s.downcase
+        providers.fetch(key) do
+          raise UnsupportedLlmProviderError, "Unsupported LLM provider #{name.inspect}. Available: #{providers.keys.sort.join(', ')}"
+        end
+      end
 
-    attr_reader :providers
+      ##
+      # @return [Array<String>] registered provider names
+      def registered
+        providers.keys.sort
+      end
 
-    def unsupported_provider_message(provider)
-      "Unsupported LLM provider #{provider.inspect}. Expected one of: #{providers.keys.sort.join(', ')}"
+      ##
+      # Reset to default providers (useful for testing)
+      # @return [void]
+      def reset!
+        @providers = nil
+      end
+
+      private
+
+      def providers
+        @providers ||= default_providers
+      end
+
+      def default_providers
+        { "openai" => OpenAiLlmProvider.new }
+      end
     end
   end
 
+  ##
+  # OpenAI provider implementation
   class OpenAiLlmProvider
+    ##
+    # Validate that the config has required OpenAI settings
+    # @param [LlmConfig] config
+    # @raise [MissingLlmConfigurationError] if not configured
+    # @return [void]
     def validate_config(config)
       return if config.open_ai_config.configured?
 
-      raise MissingLlmConfigurationError, missing_configuration_message(config)
+      raise MissingLlmConfigurationError,
+        "Missing OpenAI API key. Set #{config.open_ai_config.api_key_env} or #{OpenAiConfig::API_KEY_ENV_OVERRIDE}."
     end
 
+    ##
+    # Build the client instance
+    # @param [LlmConfig] config
+    # @param [CommandRunner] command_runner (unused, for interface compatibility)
+    # @return [OpenAiClient]
     def build_client(config:, command_runner:)
       OpenAiClient.new(config: config.open_ai_config)
-    end
-
-    private
-
-    def missing_configuration_message(config)
-      "Missing OpenAI API key for LLM provider #{LlmConfig::OPENAI_PROVIDER.inspect}. Set " \
-        "#{config.open_ai_config.api_key_env}, set #{OpenAiConfig::API_KEY_ENV_OVERRIDE} to the env var that contains the key, " \
-        "or set #{LlmConfig::PROVIDER_ENV}=#{LlmConfig::COMMAND_PROVIDER} with #{LlmConfig::COMMAND_ENV}."
-    end
-  end
-
-  class CommandLlmProvider
-    def validate_config(config)
-      return if config.command.to_s.strip != ""
-
-      raise MissingLlmConfigurationError, "Missing command for LLM provider #{LlmConfig::COMMAND_PROVIDER.inspect}. Set #{LlmConfig::COMMAND_ENV}."
-    end
-
-    def build_client(config:, command_runner:)
-      CommandLlmClient.new(command: config.command, command_runner: command_runner)
     end
   end
 end

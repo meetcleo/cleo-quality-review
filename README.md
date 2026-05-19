@@ -32,7 +32,7 @@ Local overrides are loaded first from `.cleo_quality_review/prompts/<format>.md`
 
 ## File Configuration
 
-Target files are configured with RuboCop-style YAML. The gem always loads its default config, then optionally loads `.cleo_quality_review.yaml` from the repository root.
+Target files are configured with YAML. The gem always loads its default config, then optionally loads `.cleo_quality_review.yaml` from the repository root.
 
 ```yaml
 inherit_from:
@@ -53,26 +53,26 @@ AllTools:
 
 Human output uses a configurable LLM provider.
 
-### OpenAI Provider
+### OpenAI Provider (Default)
 
 OpenAI uses the Responses API through a direct HTTPS request. By default the gem reads `OPEN_AI_API_KEY` and uses `gpt-5.5`.
 
 Override the API key env var name with `CLEO_QUALITY_REVIEW_OPENAI_API_KEY_ENV`.
 Override the model with `CLEO_QUALITY_REVIEW_OPENAI_MODEL`.
 
-### Command Provider
+### Custom Providers
 
-Use the command provider to plug in another LLM client without changing the gem:
+Register custom LLM providers in your application:
 
-```bash
-CLEO_QUALITY_REVIEW_LLM_PROVIDER=command \
-CLEO_QUALITY_REVIEW_LLM_COMMAND="llm --model claude-sonnet" \
-bundle exec check_quality --format human --files app/models/example.rb
+```ruby
+# In your application setup
+require "cleo_quality_review"
+
+CleoQualityReview::LlmProviderRegistry.register(:my_provider, MyCustomProvider.new)
 ```
 
-The assembled prompt is sent to the command on stdin. The command's stdout is used as the human review output. If `CLEO_QUALITY_REVIEW_LLM_COMMAND` is set and `CLEO_QUALITY_REVIEW_LLM_PROVIDER` is unset, the gem automatically uses the command provider.
+Then set `CLEO_QUALITY_REVIEW_LLM_PROVIDER=my_provider`.
 
-Supported providers:
-
-- `openai`
-- `command`
+Your provider class must implement:
+- `validate_config(config)` - raises `MissingLlmConfigurationError` if misconfigured
+- `build_client(config:, command_runner:)` - returns an object with `generate_review(prompt)`

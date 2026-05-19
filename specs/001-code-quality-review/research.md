@@ -80,8 +80,8 @@ The existing architecture follows constitution principles:
 ### LLM Provider Configuration
 
 Current implementation supports:
-- `openai` provider via `OPENAI_API_KEY`
-- `command` provider via `CLEO_QUALITY_REVIEW_LLM_COMMAND`
+- `openai` provider via `OPEN_AI_API_KEY` (default)
+- Custom providers via `LlmProviderRegistry.register(:name, provider)`
 
 No changes needed - spec assumption about "LLM configured and accessible" is satisfied.
 

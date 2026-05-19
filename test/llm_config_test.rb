@@ -12,18 +12,20 @@ module CleoQualityReview
       assert_equal "secret", config.open_ai_config.api_key
     end
 
-    def test_uses_command_provider_when_command_is_configured_without_explicit_provider
-      config = LlmConfig.new(env: { "CLEO_QUALITY_REVIEW_LLM_COMMAND" => "llm prompt" })
-
-      assert_equal "command", config.provider
-      assert_equal "llm prompt", config.command
-    end
-
-    def test_explicit_provider_takes_precedence
+    def test_explicit_provider_overrides_default
       config = LlmConfig.new(
         env: {
-          "CLEO_QUALITY_REVIEW_LLM_PROVIDER" => "openai",
-          "CLEO_QUALITY_REVIEW_LLM_COMMAND" => "llm prompt",
+          "CLEO_QUALITY_REVIEW_LLM_PROVIDER" => "custom",
+        },
+      )
+
+      assert_equal "custom", config.provider
+    end
+
+    def test_provider_is_lowercased
+      config = LlmConfig.new(
+        env: {
+          "CLEO_QUALITY_REVIEW_LLM_PROVIDER" => "OpenAI",
         },
       )
 

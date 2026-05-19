@@ -3,32 +3,29 @@
 require_relative "open_ai_config"
 
 module CleoQualityReview
+  ##
+  # Configuration for LLM providers
   class LlmConfig
     PROVIDER_ENV = "CLEO_QUALITY_REVIEW_LLM_PROVIDER"
-    COMMAND_ENV = "CLEO_QUALITY_REVIEW_LLM_COMMAND"
-    OPENAI_PROVIDER = "openai"
-    COMMAND_PROVIDER = "command"
-    PROVIDERS = [OPENAI_PROVIDER, COMMAND_PROVIDER].freeze
+    DEFAULT_PROVIDER = "openai"
 
     attr_reader :env
 
+    ##
+    # @param [Hash] env environment variables
     def initialize(env: ENV)
       @env = env
     end
 
+    ##
+    # @return [String] the configured provider name
     def provider
-      configured_provider = env.fetch(PROVIDER_ENV, nil).to_s.strip
-      return configured_provider.downcase unless configured_provider.empty?
-
-      return COMMAND_PROVIDER if command.to_s.strip != ""
-
-      OPENAI_PROVIDER
+      configured = env.fetch(PROVIDER_ENV, nil).to_s.strip
+      configured.empty? ? DEFAULT_PROVIDER : configured.downcase
     end
 
-    def command
-      env.fetch(COMMAND_ENV, nil)
-    end
-
+    ##
+    # @return [OpenAiConfig]
     def open_ai_config
       @open_ai_config ||= OpenAiConfig.new(env: env)
     end
