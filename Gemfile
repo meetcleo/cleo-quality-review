@@ -11,9 +11,9 @@ else
 end
 
 group :development, :test do
+  gem "debug", "~> 1.11"
   gem "dotenv", "~> 2.7"
   gem "minitest", "~> 6"
   gem "rake", "~> 13.0"
+  gem "simplecov", "~> 0.22.0"
 end
-
-gem "debug", "~> 1.11"
