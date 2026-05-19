@@ -61,10 +61,12 @@ module CleoQualityReview
     # @raise [MissingLlmConfigurationError] if not configured
     # @return [void]
     def validate_config(config)
-      return if config.open_ai_config.configured?
+      unless config.open_ai_config.configured?
+        raise MissingLlmConfigurationError,
+          "Missing OpenAI API key. Set #{config.open_ai_config.api_key_env}."
+      end
 
-      raise MissingLlmConfigurationError,
-        "Missing OpenAI API key. Set #{config.open_ai_config.api_key_env}."
+      config.open_ai_config.timeout_seconds
     end
 
     ##

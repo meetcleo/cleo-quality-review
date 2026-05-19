@@ -83,6 +83,7 @@ GitHub Actions workflow annotations:
 |----------|-------------|
 | `OPEN_AI_API_KEY` | OpenAI API key for human format |
 | `CLEO_QUALITY_REVIEW_LLM_PROVIDER` | LLM provider (default: `openai`) |
+| `CLEO_QUALITY_REVIEW_TIMEOUT_SECONDS` | OpenAI request timeout in seconds (default: 180) |
 | `CLEO_QUALITY_REVIEW_GITHUB_SUMMARY_LIMIT` | Max findings in GitHub summary (default: 5) |
 
 ## Examples

@@ -60,6 +60,7 @@ Human output uses OpenAI's Responses API.
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `CLEO_QUALITY_REVIEW_OPEN_AI_KEY` | Yes (for `--format human`) | OpenAI API key |
+| `CLEO_QUALITY_REVIEW_TIMEOUT_SECONDS` | No | OpenAI request timeout in seconds (default: 180) |
 
 The model is currently fixed to `gpt-5.5`.
 

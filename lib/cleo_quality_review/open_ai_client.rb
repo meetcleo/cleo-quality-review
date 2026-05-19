@@ -31,13 +31,18 @@ module CleoQualityReview
     # @param [URI] uri the request URI
     # @param [Hash{String => String}] headers HTTP headers
     # @param [Hash] body request body to be serialized as JSON
+    # @param [Integer] timeout_seconds HTTP timeout in seconds
     # @return [OpenAiHttpResponse]
-    def post_json(uri:, headers:, body:)
+    def post_json(uri:, headers:, body:, timeout_seconds:)
       request = Net::HTTP::Post.new(uri)
       headers.each { |key, value| request[key] = value }
       request.body = JSON.generate(body)
 
       response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |http|
+        http.open_timeout = timeout_seconds
+        http.read_timeout = timeout_seconds
+        http.write_timeout = timeout_seconds
+
         http.request(request)
       end
 
@@ -71,12 +76,16 @@ module CleoQualityReview
           model: config.model,
           input: prompt,
         },
+        timeout_seconds: config.timeout_seconds,
       )
       raise OpenAiApiError, api_error_message(response) unless response.success?
 
       extract_text(JSON.parse(response.body))
     rescue JSON::ParserError => e
       raise OpenAiApiError, "OpenAI Responses API returned invalid JSON: #{e.message}"
+    rescue Net::OpenTimeout, Net::ReadTimeout, Net::WriteTimeout => e
+      raise OpenAiApiError,
+        "OpenAI Responses API request timed out after #{config.timeout_seconds} seconds: #{e.class}: #{e.message}"
     end
 
     private
