@@ -23,7 +23,7 @@ module CleoQualityReview
     #   @return [Array<String>] checks to exclude
     # @!attribute [r] changed
     #   @return [Boolean] whether to filter to changed files only
-    ParseResult = Struct.new(:format, :checks, :files, :exclude, :changed, keyword_init: true)
+    ParseResult = Struct.new(:format, :checks, :files, :exclude, :changed, :log, keyword_init: true)
 
     ##
     # Parse command-line arguments
@@ -43,6 +43,7 @@ module CleoQualityReview
       @files = []
       @exclude = []
       @changed = false
+      @log = false
     end
 
     ##
@@ -60,12 +61,13 @@ module CleoQualityReview
         files: files,
         exclude: exclude,
         changed: changed,
+        log: log,
       )
     end
 
     private
 
-    attr_reader :argv, :format, :checks, :files, :exclude, :changed
+    attr_reader :argv, :format, :checks, :files, :exclude, :changed, :log
 
     def parser
       OptionParser.new do |opts|
@@ -93,6 +95,10 @@ module CleoQualityReview
 
         opts.on("--changed", "Only check files changed from main branch") do
           @changed = true
+        end
+
+        opts.on("--log", "Log LLM queries and responses to log/[provider].log") do
+          @log = true
         end
 
         opts.on("-h", "--help", "Print help") do

@@ -29,6 +29,7 @@ module CleoQualityReview
     :run_directory,
     :results,
     :artifacts,
+    :log,
     keyword_init: true,
   ) do
     ##

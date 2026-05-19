@@ -55,6 +55,7 @@ module CleoQualityReview
         run_directory: artifacts.to_s,
         results: check_outputs.flat_map(&:results),
         artifacts: artifacts,
+        log: options.log,
       )
     end
 

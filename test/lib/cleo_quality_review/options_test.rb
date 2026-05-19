@@ -89,5 +89,17 @@ module CleoQualityReview
 
       assert_equal ["lib/a.rb", "lib/b.rb", "lib/c.rb"], options.files
     end
+
+    def test_parses_log_flag
+      options = Options.parse(["--log"])
+
+      assert_predicate options, :log
+    end
+
+    def test_log_defaults_to_false
+      options = Options.parse([])
+
+      refute_predicate options, :log
+    end
   end
 end
