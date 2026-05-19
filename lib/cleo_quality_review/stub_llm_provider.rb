@@ -2,45 +2,15 @@
 
 module CleoQualityReview
   ##
-  # Stub LLM client for testing that returns configured responses
-  class StubLlmClient
-    attr_reader :received_prompts
-
-    ##
-    # @param [String, Proc] response fixed response or callable that receives the prompt
-    def initialize(response:)
-      @response = response
-      @received_prompts = []
-    end
-
-    ##
-    # Generate a review by returning the configured response
-    # @param [String] prompt the prompt sent
-    # @return [String] the configured response
-    def generate_review(prompt)
-      received_prompts << prompt
-
-      case response
-      when Proc
-        response.call(prompt)
-      else
-        response.to_s
-      end
-    end
-
-    private
-
-    attr_reader :response
-  end
-
-  ##
-  # Stub LLM provider for testing without making HTTP requests
-  class StubLlmProvider
+  # Configuration for stub LLM provider, mirrors OpenAiConfig interface
+  class StubConfig
     DEFAULT_RESPONSE = "This is a stub review response for testing."
+
+    attr_reader :env
 
     class << self
       ##
-      # Configure the response for the stub client
+      # Configure the response for all stub clients
       # @param [String, Proc] response fixed response or callable
       # @return [void]
       def response=(response)
@@ -62,6 +32,60 @@ module CleoQualityReview
     end
 
     ##
+    # @param [Hash{String => String}] env environment variables
+    def initialize(env: ENV)
+      @env = env
+    end
+
+    ##
+    # @return [String] the configured response
+    def response
+      self.class.response
+    end
+
+    ##
+    # @return [Boolean] always true for stub
+    def configured?
+      true
+    end
+  end
+
+  ##
+  # Stub LLM client for testing, mirrors OpenAiClient interface
+  class StubLlmClient
+    attr_reader :received_prompts
+
+    ##
+    # @param [StubConfig] config stub configuration
+    def initialize(config:)
+      @config = config
+      @received_prompts = []
+    end
+
+    ##
+    # Generate a review by returning the configured response
+    # @param [String] prompt the prompt sent
+    # @return [String] the configured response
+    def generate_review(prompt)
+      received_prompts << prompt
+
+      case config.response
+      when Proc
+        config.response.call(prompt)
+      else
+        config.response.to_s
+      end
+    end
+
+    private
+
+    attr_reader :config
+  end
+
+  ##
+  # Stub LLM provider for testing without making HTTP requests
+  class StubLlmProvider
+    ##
     # Validate config - always passes for stub
     # @param [LlmConfig] config
     # @return [void]
@@ -74,7 +98,7 @@ module CleoQualityReview
     # @param [CommandRunner] command_runner
     # @return [StubLlmClient]
     def build_client(config:, command_runner:)
-      StubLlmClient.new(response: self.class.response)
+      StubLlmClient.new(config: config.stub_config)
     end
   end
 end

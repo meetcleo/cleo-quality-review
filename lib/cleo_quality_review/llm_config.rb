@@ -27,5 +27,12 @@ module CleoQualityReview
     def open_ai_config
       @open_ai_config ||= OpenAiConfig.new(env: env)
     end
+
+    ##
+    # @return [StubConfig]
+    def stub_config
+      require_relative "stub_llm_provider"
+      @stub_config ||= StubConfig.new(env: env)
+    end
   end
 end

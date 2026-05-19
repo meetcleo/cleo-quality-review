@@ -18,48 +18,58 @@ module CleoQualityReview
     end
 
     def test_client_returns_default_response
+      StubConfig.reset!
       provider = StubLlmProvider.new
-      StubLlmProvider.reset!
-      client = provider.build_client(config: nil, command_runner: nil)
+      config = LlmConfig.new(env: {})
+      client = provider.build_client(config: config, command_runner: nil)
 
       result = client.generate_review("test prompt")
 
-      assert_equal StubLlmProvider::DEFAULT_RESPONSE, result
+      assert_equal StubConfig::DEFAULT_RESPONSE, result
     end
 
     def test_client_returns_configured_response
+      StubConfig.response = "custom response"
       provider = StubLlmProvider.new
-      StubLlmProvider.response = "custom response"
-      client = provider.build_client(config: nil, command_runner: nil)
+      config = LlmConfig.new(env: {})
+      client = provider.build_client(config: config, command_runner: nil)
 
       result = client.generate_review("test prompt")
 
       assert_equal "custom response", result
     ensure
-      StubLlmProvider.reset!
+      StubConfig.reset!
     end
 
     def test_client_supports_proc_response
+      StubConfig.response = ->(prompt) { "Received: #{prompt}" }
       provider = StubLlmProvider.new
-      StubLlmProvider.response = ->(prompt) { "Received: #{prompt}" }
-      client = provider.build_client(config: nil, command_runner: nil)
+      config = LlmConfig.new(env: {})
+      client = provider.build_client(config: config, command_runner: nil)
 
       result = client.generate_review("hello")
 
       assert_equal "Received: hello", result
     ensure
-      StubLlmProvider.reset!
+      StubConfig.reset!
     end
 
     def test_client_records_received_prompts
+      StubConfig.reset!
       provider = StubLlmProvider.new
-      StubLlmProvider.reset!
-      client = provider.build_client(config: nil, command_runner: nil)
+      config = LlmConfig.new(env: {})
+      client = provider.build_client(config: config, command_runner: nil)
 
       client.generate_review("first prompt")
       client.generate_review("second prompt")
 
       assert_equal ["first prompt", "second prompt"], client.received_prompts
+    end
+
+    def test_stub_config_is_always_configured
+      config = StubConfig.new(env: {})
+
+      assert_predicate config, :configured?
     end
   end
 end
