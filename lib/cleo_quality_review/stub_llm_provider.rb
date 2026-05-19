@@ -6,8 +6,6 @@ module CleoQualityReview
   class StubConfig
     DEFAULT_RESPONSE = "This is a stub review response for testing."
 
-    attr_reader :env
-
     class << self
       ##
       # Configure the response for all stub clients
@@ -95,9 +93,8 @@ module CleoQualityReview
     ##
     # Build the stub client
     # @param [LlmConfig] config
-    # @param [CommandRunner] command_runner
     # @return [StubLlmClient]
-    def build_client(config:, command_runner:)
+    def build_client(config:)
       StubLlmClient.new(config: config.stub_config)
     end
   end

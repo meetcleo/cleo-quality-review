@@ -24,10 +24,6 @@ module CleoQualityReviewTestHelpers
     def success?
       success
     end
-
-    def exitstatus
-      success ? 0 : 1
-    end
   end
 
   def command_result(stdout: "", stderr: "", success: true)

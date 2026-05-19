@@ -7,13 +7,17 @@ module CleoQualityReview
     OPEN_AI_API_KEY = "CLEO_QUALITY_REVIEW_OPEN_AI_KEY"
     DEFAULT_MODEL = "gpt-5.5"
 
-    attr_reader :env
-
     ##
     # @param [Hash{String => String}] env environment variables
     def initialize(env: ENV)
       @env = env
     end
+
+    private
+
+    attr_reader :env
+
+    public
 
     ##
     # @return [String] environment variable name for the API key

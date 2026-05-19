@@ -21,7 +21,7 @@ module CleoQualityReview
       StubConfig.reset!
       provider = StubLlmProvider.new
       config = LlmConfig.new(env: {})
-      client = provider.build_client(config: config, command_runner: nil)
+      client = provider.build_client(config: config, )
 
       result = client.generate_review("test prompt")
 
@@ -32,7 +32,7 @@ module CleoQualityReview
       StubConfig.response = "custom response"
       provider = StubLlmProvider.new
       config = LlmConfig.new(env: {})
-      client = provider.build_client(config: config, command_runner: nil)
+      client = provider.build_client(config: config, )
 
       result = client.generate_review("test prompt")
 
@@ -45,7 +45,7 @@ module CleoQualityReview
       StubConfig.response = ->(prompt) { "Received: #{prompt}" }
       provider = StubLlmProvider.new
       config = LlmConfig.new(env: {})
-      client = provider.build_client(config: config, command_runner: nil)
+      client = provider.build_client(config: config, )
 
       result = client.generate_review("hello")
 
@@ -58,7 +58,7 @@ module CleoQualityReview
       StubConfig.reset!
       provider = StubLlmProvider.new
       config = LlmConfig.new(env: {})
-      client = provider.build_client(config: config, command_runner: nil)
+      client = provider.build_client(config: config, )
 
       client.generate_review("first prompt")
       client.generate_review("second prompt")

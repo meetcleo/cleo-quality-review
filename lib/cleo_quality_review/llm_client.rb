@@ -9,10 +9,8 @@ module CleoQualityReview
   class LlmClient
     ##
     # @param [LlmConfig] config
-    # @param [CommandRunner] command_runner
-    def initialize(config: LlmConfig.new, command_runner: CommandRunner.new)
+    def initialize(config: LlmConfig.new)
       @config = config
-      @command_runner = command_runner
       provider.validate_config(config)
     end
 
@@ -26,10 +24,10 @@ module CleoQualityReview
 
     private
 
-    attr_reader :config, :command_runner
+    attr_reader :config
 
     def provider_client
-      provider.build_client(config: config, command_runner: command_runner)
+      provider.build_client(config: config)
     end
 
     def provider

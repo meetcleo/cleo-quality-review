@@ -51,7 +51,7 @@ module CleoQualityReview
       end
 
       def llm_client
-        @llm_client ||= LlmClient.new(config: llm_config, command_runner: command_runner)
+        @llm_client ||= LlmClient.new(config: llm_config)
       end
     end
   end

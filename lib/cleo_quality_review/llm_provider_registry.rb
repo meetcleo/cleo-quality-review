@@ -40,13 +40,6 @@ module CleoQualityReview
         providers.keys.sort
       end
 
-      ##
-      # Reset to default providers (useful for testing)
-      # @return [void]
-      def reset!
-        @providers = nil
-      end
-
       private
 
       def providers
@@ -77,9 +70,8 @@ module CleoQualityReview
     ##
     # Build the client instance
     # @param [LlmConfig] config
-    # @param [CommandRunner] command_runner (unused, for interface compatibility)
     # @return [OpenAiClient]
-    def build_client(config:, command_runner:)
+    def build_client(config:)
       OpenAiClient.new(config: config.open_ai_config)
     end
   end

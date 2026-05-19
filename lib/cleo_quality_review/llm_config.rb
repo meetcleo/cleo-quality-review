@@ -8,13 +8,17 @@ module CleoQualityReview
   class LlmConfig
     PROVIDER = "openai"
 
-    attr_reader :env
-
     ##
-    # @param [Hash] env environment variables
+    # @param [Hash{String => String}] env environment variables
     def initialize(env: ENV)
       @env = env
     end
+
+    private
+
+    attr_reader :env
+
+    public
 
     ##
     # @return [String] the provider name
