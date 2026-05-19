@@ -69,42 +69,41 @@ The model is currently fixed to `gpt-5.5`.
 
 ```mermaid
 %%{init: {"themeVariables": {"fontSize": "32px"}}}%%
-flowchart TD
+flowchart LR
     Executable["exe/check_quality"]:::accent --> CLI["CLI"]:::accent
-    CLI --> Options["Options<br/>format, checks, files, filters"]:::rounded
-    Options --> Runner["Runner<br/>orchestrates one review run"]:::accent
+    CLI --> Options["Options"]:::rounded
+    CLI --> Runner["Runner"]:::accent
+    CLI --> Formatter["Formatter"]:::accent
+    Options --> Runner
 
-    Runner --> TargetResolver["TargetResolver<br/>explicit paths or changed files"]:::rounded
-    Configuration["Configuration<br/>default.yml + local YAML"]:::neutral --> TargetResolver
-    Git["Git<br/>origin/main diff + untracked files"]:::info --> TargetResolver
-    TargetResolver --> Targets["Target files<br/>filtered Ruby files"]:::rounded
+    Runner --> TargetResolver["TargetResolver"]:::rounded
+    TargetResolver --> Configuration["Configuration"]:::neutral
+    TargetResolver --> Git["Git"]:::info
+    Runner --> RunArtifacts["RunArtifacts"]:::neutral
+    RunArtifacts --> Git
 
-    Runner --> CheckRegistry["CheckRegistry<br/>reek, flog, fasterer"]:::rounded
-    CheckRegistry --> Checks["QualityCheck adapters<br/>commands + parsers"]:::rounded
-    Targets --> Checks
-    Checks --> CommandRunner["CommandRunner<br/>Open3.capture3"]:::rounded
-    CommandRunner --> Tools["External tools<br/>Reek, Flog, Fasterer"]:::info
-    Tools --> CheckOutput["CheckOutput + Result<br/>raw output + findings"]:::rounded
+    Runner --> CheckRegistry["CheckRegistry"]:::rounded
+    CheckRegistry --> QualityCheck["QualityCheck"]:::rounded
+    Runner --> QualityCheck
+    QualityCheck --> CommandRunner["CommandRunner"]:::rounded
+    CommandRunner --> Tools["Reek / Flog / Fasterer"]:::info
 
-    Runner --> RunArtifacts["RunArtifacts<br/>tmp/quality_checks/&lt;timestamp&gt;"]:::neutral
-    Git --> RunArtifacts
-    Targets --> RunArtifacts
-    CheckOutput --> RunArtifacts
-    RunArtifacts --> Run["Run<br/>metadata, targets, artifacts, findings"]:::rounded
-    CheckOutput --> Run
+    RunArtifacts --> Run["Run"]:::rounded
+    Runner --> Run
 
-    Run --> Formatter["Formatter<br/>dispatches by format"]:::accent
-    PromptLoader["PromptLoader<br/>local overrides + bundled prompts"]:::neutral --> AgentFormatter["Agent formatter<br/>JSON document"]:::positive
-    PromptLoader --> GithubFormatter["GitHub formatter<br/>workflow annotations"]:::positive
-    PromptLoader --> HumanFormatter["Human formatter<br/>LLM review"]:::positive
-    Formatter --> AgentFormatter
-    Formatter --> GithubFormatter
-    Formatter --> HumanFormatter
+    Formatter --> Run
+    Formatter --> Agent["Agent"]:::positive
+    Formatter --> GitHub["GitHub"]:::positive
+    Formatter --> Human["Human"]:::positive
 
-    Run --> PromptBuilder["PromptBuilder<br/>metadata, diff, raw outputs, file contents"]:::rounded
-    RunArtifacts --> PromptBuilder
-    PromptBuilder --> HumanFormatter
-    HumanFormatter --> LlmClient["LlmClient / OpenAiClient<br/>Responses API"]:::info
+    Agent --> PromptLoader["PromptLoader"]:::neutral
+    GitHub --> PromptLoader
+    Human --> PromptLoader
+    Human --> PromptBuilder["PromptBuilder"]:::rounded
+    PromptBuilder --> Run
+    PromptBuilder --> RunArtifacts
+    Human --> LlmClient["LlmClient"]:::info
+    LlmClient --> OpenAI["OpenAI"]:::info
 
     classDef rounded fill:#F8F6F2,stroke:#AC9B98,stroke-width:2px,color:#47201C,rx:10,ry:10
     classDef positive fill:#E6F2C9,stroke:#51623A,stroke-width:2px,color:#28371A,rx:10,ry:10
