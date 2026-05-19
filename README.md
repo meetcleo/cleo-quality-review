@@ -51,28 +51,7 @@ AllTools:
 
 ## LLM Configuration
 
-Human output uses a configurable LLM provider.
-
-### OpenAI Provider (Default)
-
-OpenAI uses the Responses API through a direct HTTPS request. By default the gem reads `OPEN_AI_API_KEY` and uses `gpt-5.5`.
+Human output uses OpenAI's Responses API. Set `OPEN_AI_API_KEY` to enable.
 
 Override the API key env var name with `CLEO_QUALITY_REVIEW_OPENAI_API_KEY_ENV`.
-Override the model with `CLEO_QUALITY_REVIEW_OPENAI_MODEL`.
-
-### Custom Providers
-
-Register custom LLM providers in your application:
-
-```ruby
-# In your application setup
-require "cleo_quality_review"
-
-CleoQualityReview::LlmProviderRegistry.register(:my_provider, MyCustomProvider.new)
-```
-
-Then set `CLEO_QUALITY_REVIEW_LLM_PROVIDER=my_provider`.
-
-Your provider class must implement:
-- `validate_config(config)` - raises `MissingLlmConfigurationError` if misconfigured
-- `build_client(config:, command_runner:)` - returns an object with `generate_review(prompt)`
+Override the model with `CLEO_QUALITY_REVIEW_OPENAI_MODEL` (default: `gpt-5.5`).

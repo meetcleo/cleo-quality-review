@@ -4,10 +4,9 @@ require_relative "open_ai_config"
 
 module CleoQualityReview
   ##
-  # Configuration for LLM providers
+  # Configuration for LLM provider
   class LlmConfig
-    PROVIDER_ENV = "CLEO_QUALITY_REVIEW_LLM_PROVIDER"
-    DEFAULT_PROVIDER = "openai"
+    PROVIDER = "openai"
 
     attr_reader :env
 
@@ -18,10 +17,9 @@ module CleoQualityReview
     end
 
     ##
-    # @return [String] the configured provider name
+    # @return [String] the provider name
     def provider
-      configured = env.fetch(PROVIDER_ENV, nil).to_s.strip
-      configured.empty? ? DEFAULT_PROVIDER : configured.downcase
+      PROVIDER
     end
 
     ##
