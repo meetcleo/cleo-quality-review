@@ -65,7 +65,7 @@ check_quality --exclude flog,fasterer lib/
 Create `.cleo_quality_review.yaml` in your project root:
 
 ```yaml
-AllCops:
+AllTools:
   Include:
     - "**/*.rb"
     - "**/*.rake"

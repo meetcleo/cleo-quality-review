@@ -64,7 +64,7 @@ release.
 
 Repository users MUST be able to control scanned files without changing gem code. The project
 configuration file is `.cleo_quality_review.yaml`, and its shape MUST remain RuboCop-like:
-`inherit_from` plus `AllCops.Include` and `AllCops.Exclude`.
+`inherit_from` plus `AllTools.Include` and `AllTools.Exclude`.
 
 The gem MUST load bundled defaults first, then explicit inherited files, then the local repository
 configuration. Relative inherited paths MUST resolve from the declaring config file. User-level

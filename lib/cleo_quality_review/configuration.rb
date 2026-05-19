@@ -7,7 +7,7 @@ module CleoQualityReview
   class Configuration
     DEFAULT_CONFIG_PATH = File.expand_path("../../config/default.yml", __dir__)
     LOCAL_CONFIG_PATH = ".cleo_quality_review.yaml"
-    ALL_COPS = "AllCops"
+    ALL_TOOLS = "AllTools"
     INCLUDE = "Include"
     EXCLUDE = "Exclude"
     INHERIT_FROM = "inherit_from"
@@ -41,7 +41,7 @@ module CleoQualityReview
     attr_reader :data
 
     def patterns_for(key)
-      Array(data.fetch(ALL_COPS) { {} }.fetch(key) { [] }).map(&:to_s)
+      Array(data.fetch(ALL_TOOLS) { {} }.fetch(key) { [] }).map(&:to_s)
     end
 
     def matches_any?(patterns, path)

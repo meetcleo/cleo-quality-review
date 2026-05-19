@@ -20,7 +20,7 @@ module CleoQualityReview
         File.write(
           ".cleo_quality_review.yaml",
           <<~YAML,
-            AllCops:
+            AllTools:
               Include:
                 - "**/*.rake"
               Exclude:
@@ -42,7 +42,7 @@ module CleoQualityReview
         File.write(
           "config/user.yml",
           <<~YAML,
-            AllCops:
+            AllTools:
               Exclude:
                 - "app/private/**/*"
           YAML
@@ -52,7 +52,7 @@ module CleoQualityReview
           <<~YAML,
             inherit_from: config/user.yml
 
-            AllCops:
+            AllTools:
               Include:
                 - "**/*.rake"
           YAML
@@ -75,7 +75,7 @@ module CleoQualityReview
         File.write(
           File.join(home, ".config", "cleo_quality_review.yml"),
           <<~YAML,
-            AllCops:
+            AllTools:
               Exclude:
                 - "app/local/**/*"
           YAML

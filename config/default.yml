@@ -1,4 +1,4 @@
-AllCops:
+AllTools:
   Include:
     - "**/*.rb"
   Exclude:

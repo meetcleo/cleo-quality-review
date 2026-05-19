@@ -1,4 +1,4 @@
-# frozen_string_literal: true
+ # frozen_string_literal: true
 
 module CleoQualityReview
   CommandResult = Struct.new(:stdout, :stderr, :status, keyword_init: true) do

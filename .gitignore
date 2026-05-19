@@ -1,2 +1,5 @@
 .idea/
 tmp/
+.env.development
+.env.development.local
+node_modules/

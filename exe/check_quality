@@ -1,6 +1,17 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
+$LOAD_PATH << File.expand_path('../lib', __dir__)
 
 require "cleo_quality_review/cli"
+
+##
+# Load development environment variables
+# This should not be used when packaging in production
+if ENV.fetch('CLEO_QUALITY_CHECK_DEV', '1') == '1'
+  require 'dotenv'
+  Dotenv.load("./.env.development.local")
+  require 'debug'
+  debugger
+end
 
 exit CleoQualityReview::CLI.new(ARGV).run

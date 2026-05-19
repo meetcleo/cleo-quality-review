@@ -73,7 +73,7 @@ module CleoQualityReview
         FileUtils.mkdir_p("lib/tasks")
         File.write("lib/tasks/import.rake", "task :import\n")
         File.write(".cleo_quality_review.yaml", <<~YAML)
-          AllCops:
+          AllTools:
             Include:
               - "**/*.rake"
         YAML
@@ -105,7 +105,7 @@ module CleoQualityReview
         File.write("app/models/user.rb", "# frozen_string_literal: true\n")
         File.write("app/models/generated/user.rb", "# frozen_string_literal: true\n")
         File.write(".cleo_quality_review.yaml", <<~YAML)
-          AllCops:
+          AllTools:
             Exclude:
               - "app/models/generated/**/*"
         YAML

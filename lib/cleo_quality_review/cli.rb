@@ -22,7 +22,7 @@ module CleoQualityReview
       output = Formatter.new(run: run, command_runner: command_runner).format
       stdout.puts(output) unless output.empty?
       0
-    rescue MissingLlmConfigurationError, UnsupportedLlmProviderError, LlmProviderError, OptionParser::ParseError, ArgumentError => e
+    rescue Error, OptionParser::ParseError, ArgumentError => e
       stderr.puts("check_quality: #{e.message}")
       1
     end

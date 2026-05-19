@@ -38,7 +38,7 @@ Target files are configured with RuboCop-style YAML. The gem always loads its de
 inherit_from:
   - ~/.config/cleo_quality_review.yml
 
-AllCops:
+AllTools:
   Include:
     - "**/*.rb"
     - "**/*.rake"
