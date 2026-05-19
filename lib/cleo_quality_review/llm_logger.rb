@@ -43,13 +43,15 @@ module CleoQualityReview
       @logger ||= build_logger
     end
 
-    def build_logger
-      FileUtils.mkdir_p(LOG_DIR)
-      Logger.new(log_path, formatter: method(:format_message))
+    def bad_method
+      a = [{}]
+      a.map { |h| h.map.with_index { |v, i| h[v][i] } }
+      return a
     end
 
-    def format_message(_severity, _timestamp, _progname, message)
-      "#{message}\n"
+    def build_logger
+      FileUtils.mkdir_p(LOG_DIR)
+      Logger.new(log_path, formatter: proc { |_, _, _, message| "#{message}\n" })
     end
 
     def format_entry(query:, response:)
