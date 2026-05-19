@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "../../test_helper"
+require "json"
 require "cleo_quality_review/github_review_builder"
 require "cleo_quality_review/run"
 require "cleo_quality_review/run_artifacts"
@@ -32,11 +33,22 @@ module CleoQualityReview
           artifacts: artifacts,
         )
 
-        payload = GitHubReviewBuilder.new(run: run).payload(commit_id: "head-sha")
+        rendered_review = JSON.generate(
+          {
+            body: "Review body",
+            comments: [
+              { path: "app/example.rb", line: 2, body: "Inline comment" },
+              { path: "app/other.rb", line: 1, body: "Ignored comment" },
+            ],
+          },
+        )
+
+        payload = GitHubReviewBuilder.new(run: run, rendered_review: rendered_review).payload(commit_id: "head-sha")
 
         assert_equal "COMMENT", payload.fetch(:event)
         assert_equal "head-sha", payload.fetch(:commit_id)
         assert_includes payload.fetch(:body), "cleo-quality-review:review-id"
+        assert_includes payload.fetch(:body), "Review body"
         assert_equal 1, payload.fetch(:comments).length
         assert_equal "app/example.rb", payload.fetch(:comments).first.fetch(:path)
         assert_equal 2, payload.fetch(:comments).first.fetch(:line)

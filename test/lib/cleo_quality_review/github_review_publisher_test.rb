@@ -20,6 +20,7 @@ module CleoQualityReview
         File.write(event_path, JSON.generate({ "push" => {} }))
         publisher = GitHubReviewPublisher.new(
           run: run_with_findings,
+          rendered_review: rendered_review,
           env: {
             "GITHUB_EVENT_PATH" => event_path,
             "GITHUB_REPOSITORY" => "owner/repo",
@@ -29,6 +30,16 @@ module CleoQualityReview
 
         assert_equal "No pull_request event found; skipping PR review publication.", publisher.publish
       end
+    end
+
+    def test_skips_when_rendered_review_has_no_comments
+      publisher = GitHubReviewPublisher.new(
+        run: run_with_findings,
+        rendered_review: JSON.generate({ body: "No issues", comments: [] }),
+        env: {},
+      )
+
+      assert_equal "No PR review comments to publish.", publisher.publish
     end
 
     def test_publishes_review_payload
@@ -48,6 +59,7 @@ module CleoQualityReview
         requests = []
         publisher = GitHubReviewPublisher.new(
           run: run_with_findings,
+          rendered_review: rendered_review,
           env: {
             "GITHUB_API_URL" => "https://api.github.test",
             "GITHUB_EVENT_PATH" => event_path,
@@ -91,6 +103,17 @@ module CleoQualityReview
           Result.new(tool: "reek", check: "DuplicateMethodCall", timestamp: 123, result: "call repeated", filepath: "app/example.rb", line: 2),
         ],
         artifacts: artifacts,
+      )
+    end
+
+    def rendered_review
+      JSON.generate(
+        {
+          body: "Review body",
+          comments: [
+            { path: "app/example.rb", line: 2, body: "Inline comment" },
+          ],
+        },
       )
     end
   end

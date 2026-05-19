@@ -83,7 +83,7 @@ module CleoQualityReview
     def run_publish_pr_review(arguments)
       options = Options.parse(arguments)
       run = load_run(options)
-      output = GitHubReviewPublisher.new(run: run).publish
+      output = GitHubReviewPublisher.new(run: run, rendered_review: rendered_pr_review(options, run)).publish
       stdout.puts(output) unless output.empty?
       0
     end
@@ -92,6 +92,13 @@ module CleoQualityReview
       raise OptionParser::MissingArgument, "--review-id is required" if options.review_id.to_s.strip == ""
 
       RunArtifacts.load(review_id: options.review_id).to_run(format: options.format, log: options.log)
+    end
+
+    def rendered_pr_review(options, run)
+      path = options.review_file || File.join(run.run_directory, "pr_review.json")
+      raise OptionParser::MissingArgument, "--review-file is required or #{path} must exist" unless File.file?(path)
+
+      File.read(path)
     end
   end
 end

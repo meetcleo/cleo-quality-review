@@ -8,20 +8,21 @@
 check_quality [OPTIONS] [FILES...]
 check_quality analyze [OPTIONS] [FILES...]
 check_quality render --review-id REVIEW_ID --format FORMAT
-check_quality publish-pr-review --review-id REVIEW_ID
+check_quality publish-pr-review --review-id REVIEW_ID [--review-file PATH]
 ```
 
 ## Options
 
 | Option | Short | Type | Default | Description |
 |--------|-------|------|---------|-------------|
-| `--format` | `-f` | string | `human` | Output format: `human`, `agent`, `github` |
+| `--format` | `-f` | string | `human` | Output format: `human`, `agent`, `github`, `pr_review` |
 | `--checks` | `-c` | string[] | all | Checks to run (comma-separated or repeated) |
 | `--only` | | string[] | all | Alias for `--checks` |
 | `--exclude` | `-x` | string[] | none | Checks to exclude |
 | `--files` | | string[] | changed | Files/directories to check |
 | `--changed` | | flag | false | Only check files changed from main branch |
 | `--review-id` | | string | | Existing analysis artifact ID for render/publish commands |
+| `--review-file` | | string | `tmp/quality_checks/<review_id>/pr_review.json` | Rendered PR review JSON to publish |
 | `--help` | `-h` | flag | | Show help message |
 
 ## Subcommands
@@ -30,7 +31,7 @@ check_quality publish-pr-review --review-id REVIEW_ID
 |---------|-------------|
 | `analyze` | Resolves target files, runs configured tools, writes `tmp/quality_checks/<review_id>/`, and prints the deterministic review ID |
 | `render` | Loads completed artifacts by `--review-id` and renders the selected output format |
-| `publish-pr-review` | Loads completed artifacts by `--review-id` and posts a GitHub pull request review when running in a pull request workflow |
+| `publish-pr-review` | Loads completed artifacts and rendered `pr_review` JSON by `--review-id`, then posts a GitHub pull request review when running in a pull request workflow |
 
 ## Arguments
 
@@ -89,6 +90,23 @@ GitHub Actions workflow annotations:
 ::notice title=Cleo Quality Review Summary::Found 5 issues in 3 files
 ```
 
+### PR Review Format (`--format pr_review`)
+
+JSON structure for pull request review publication:
+
+```json
+{
+  "body": "Short markdown review summary",
+  "comments": [
+    {
+      "path": "lib/example.rb",
+      "line": 42,
+      "body": "Markdown inline review comment"
+    }
+  ]
+}
+```
+
 ## Environment Variables
 
 | Variable | Description |
@@ -127,6 +145,7 @@ check_quality --changed
 # Split CI analysis from output rendering/publishing
 review_id="$(check_quality analyze --changed)"
 check_quality render --format github --review-id "$review_id"
+check_quality render --format pr_review --review-id "$review_id" > "tmp/quality_checks/$review_id/pr_review.json"
 check_quality publish-pr-review --review-id "$review_id"
 ```
 

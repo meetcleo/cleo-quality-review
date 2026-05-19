@@ -1,18 +1,23 @@
 # frozen_string_literal: true
 
+require "json"
+
 require_relative "diff_map"
+require_relative "llm_errors"
 
 module CleoQualityReview
   ##
-  # Builds a GitHub pull request review payload from normalized findings
+  # Builds a GitHub pull request review payload from rendered pr_review JSON
   class GitHubReviewBuilder
     MAX_INLINE_COMMENTS = 20
     MAX_BODY_LENGTH = 3_500
 
     ##
     # @param [Run] run completed quality review run
-    def initialize(run:)
+    # @param [String] rendered_review JSON produced by the pr_review formatter
+    def initialize(run:, rendered_review:)
       @run = run
+      @rendered_review = rendered_review
       @diff_map = DiffMap.new(run.artifacts.changes_diff)
     end
 
@@ -36,70 +41,70 @@ module CleoQualityReview
       "<!-- cleo-quality-review:#{run.review_id} -->"
     end
 
+    ##
+    # @return [Boolean] whether the rendered review contains anything useful to publish
+    def empty?
+      rendered_comments.empty?
+    end
+
     private
 
-    attr_reader :diff_map, :run
+    attr_reader :diff_map, :rendered_review, :run
 
     def inline_comments
-      commentable_results.first(MAX_INLINE_COMMENTS).map do |result|
+      rendered_comments.first(MAX_INLINE_COMMENTS).filter_map do |comment|
+        path = comment["path"].to_s
+        line = comment["line"].to_i
+        body = comment["body"].to_s.strip
+        next if path.empty? || line <= 0 || body.empty?
+        next unless diff_map.commentable?(path, line)
+
         {
-          path: result.filepath,
-          line: result.line.to_i,
+          path: path,
+          line: line,
           side: "RIGHT",
-          body: comment_body(result),
+          body: truncate(body),
         }
       end
     end
 
-    def commentable_results
-      deduplicated_results.select do |result|
-        result.filepath.to_s != "" &&
-          result.line &&
-          diff_map.commentable?(result.filepath, result.line)
-      end
+    def rendered_comments
+      comments = parsed_review.fetch("comments", [])
+      raise Error, "pr_review JSON field \"comments\" must be an array" unless comments.is_a?(Array)
+
+      comments
     end
 
-    def deduplicated_results
-      seen = {}
-      run.results.select do |result|
-        key = [result.tool, result.check, result.filepath, result.line, result.result]
-        next false if seen[key]
+    def parsed_review
+      @parsed_review ||= begin
+        parsed = JSON.parse(rendered_review.to_s)
+        raise Error, "pr_review JSON must be an object" unless parsed.is_a?(Hash)
 
-        seen[key] = true
+        parsed
       end
+    rescue JSON::ParserError => e
+      raise Error, "pr_review output was not valid JSON: #{e.message}"
     end
 
     def review_body(comments)
       [
         marker,
-        "Cleo quality review found #{run.results.length} finding#{'s' unless run.results.length == 1}.",
+        body_text,
         inline_summary(comments),
-        unmapped_summary,
       ].compact.join("\n\n")
     end
 
+    def body_text
+      parsed_review.fetch("body", "").to_s.strip
+    end
+
     def inline_summary(comments)
-      return "No findings mapped cleanly to commentable PR diff lines." if comments.empty?
+      requested = rendered_comments.length
+      return "No rendered comments mapped to commentable PR diff lines." if comments.empty? && requested.positive?
+      return if requested == comments.length
 
-      "Posted #{comments.length} inline comment#{'s' unless comments.length == 1}."
-    end
-
-    def unmapped_summary
-      unmapped = run.results.length - commentable_results.length
-      capped = [commentable_results.length - MAX_INLINE_COMMENTS, 0].max
-      omitted = unmapped + capped
-      return if omitted <= 0
-
-      "#{omitted} finding#{'s' unless omitted == 1} were left in the workflow annotation output because they did not map to an inline review comment."
-    end
-
-    def comment_body(result)
-      truncate(
-        [
-          "**#{result.tool} / #{result.check}**",
-          result.result,
-        ].join("\n\n"),
-      )
+      omitted = requested - comments.length
+      "#{omitted} rendered comment#{'s' unless omitted == 1} were omitted because they did not map to commentable PR diff lines."
     end
 
     def truncate(value)

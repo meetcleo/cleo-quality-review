@@ -15,9 +15,11 @@ module CleoQualityReview
 
     ##
     # @param [Run] run completed quality review run
+    # @param [String] rendered_review JSON produced by the pr_review formatter
     # @param [Hash{String => String}] env process environment
-    def initialize(run:, env: ENV)
+    def initialize(run:, rendered_review:, env: ENV)
       @run = run
+      @rendered_review = rendered_review
       @env = env
     end
 
@@ -25,7 +27,7 @@ module CleoQualityReview
     # Publish the review, or skip when there is no PR context/findings
     # @return [String] status message
     def publish
-      return "No quality review findings to publish." if run.results.empty?
+      return "No PR review comments to publish." if builder.empty?
       return "No pull_request event found; skipping PR review publication." unless pull_request_context?
       return "PR review already published for review ID #{run.review_id}; skipping." if already_published?
 
@@ -43,7 +45,7 @@ module CleoQualityReview
       end
     end
 
-    attr_reader :env, :run
+    attr_reader :env, :rendered_review, :run
 
     def already_published?
       response = request_json(:get, reviews_uri)
@@ -55,7 +57,7 @@ module CleoQualityReview
     end
 
     def builder
-      @builder ||= GitHubReviewBuilder.new(run: run)
+      @builder ||= GitHubReviewBuilder.new(run: run, rendered_review: rendered_review)
     end
 
     def pull_request_context?

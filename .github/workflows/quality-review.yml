@@ -76,6 +76,10 @@ jobs:
       - name: Render workflow annotations
         run: bundle exec check_quality render --format github --review-id "${{ steps.analyze.outputs.review_id }}"
 
+      - name: Render PR review JSON
+        if: github.event_name == 'pull_request'
+        run: bundle exec check_quality render --format pr_review --review-id "${{ steps.analyze.outputs.review_id }}" > "tmp/quality_checks/${{ steps.analyze.outputs.review_id }}/pr_review.json"
+
       - name: Publish PR review
         if: github.event_name == 'pull_request'
         env:

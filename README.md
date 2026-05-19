@@ -20,6 +20,7 @@ CI can split analysis from output rendering so the Ruby quality tools run once a
 ```bash
 review_id="$(bundle exec check_quality analyze --checks all --changed)"
 bundle exec check_quality render --format github --review-id "${review_id}"
+bundle exec check_quality render --format pr_review --review-id "${review_id}" > "tmp/quality_checks/${review_id}/pr_review.json"
 GITHUB_TOKEN=... bundle exec check_quality publish-pr-review --review-id "${review_id}"
 ```
 
@@ -33,7 +34,9 @@ The gem embeds Ruby check adapters for Reek, Flog, and Fasterer. Each run writes
 
 `github` output uses the GitHub prompt to condense the full report into GitHub workflow annotations for the most relevant findings.
 
-`publish-pr-review` posts a GitHub pull request review using normalized findings. Findings that map to commentable right-side diff lines become inline review comments; the rest remain available through the workflow annotation output.
+`pr_review` output uses the PR review prompt to condense the full report into JSON for GitHub pull request reviews.
+
+`publish-pr-review` posts that rendered PR review JSON. Comments that map to commentable right-side diff lines become inline review comments; comments that do not map cleanly are omitted.
 
 ## Prompts
 
@@ -42,6 +45,7 @@ Prompts are format-specific:
 - `human`
 - `agent`
 - `github`
+- `pr_review`
 
 Local overrides are loaded first from `.cleo_quality_review/prompts/<format>.md`, then `.cleo_quality_review/<format>.md`. For backwards compatibility, `human` also supports `.cleo_quality_review/prompt.md`. If no local prompt exists, the gem uses `vendor/cleo_quality_review/prompts/<format>.md`.
 

@@ -6,7 +6,7 @@ module CleoQualityReview
   ##
   # Parses command-line options for the quality review CLI
   class Options
-    FORMATS = %w[human agent github].freeze
+    FORMATS = %w[human agent github pr_review].freeze
     DEFAULT_FORMAT = "human"
     DEFAULT_CHECKS = ["all"].freeze
 
@@ -23,7 +23,7 @@ module CleoQualityReview
     #   @return [Array<String>] checks to exclude
     # @!attribute [r] changed
     #   @return [Boolean] whether to filter to changed files only
-    ParseResult = Struct.new(:format, :checks, :files, :exclude, :changed, :log, :review_id, keyword_init: true)
+    ParseResult = Struct.new(:format, :checks, :files, :exclude, :changed, :log, :review_id, :review_file, keyword_init: true)
 
     ##
     # Parse command-line arguments
@@ -45,6 +45,7 @@ module CleoQualityReview
       @changed = false
       @log = false
       @review_id = nil
+      @review_file = nil
     end
 
     ##
@@ -64,12 +65,13 @@ module CleoQualityReview
         changed: changed,
         log: log,
         review_id: review_id,
+        review_file: review_file,
       )
     end
 
     private
 
-    attr_reader :argv, :format, :checks, :files, :exclude, :changed, :log, :review_id
+    attr_reader :argv, :format, :checks, :files, :exclude, :changed, :log, :review_id, :review_file
 
     def parser
       OptionParser.new do |opts|
@@ -105,6 +107,10 @@ module CleoQualityReview
 
         opts.on("--review-id REVIEW_ID", "Reuse an existing analysis artifact by review ID") do |value|
           @review_id = value
+        end
+
+        opts.on("--review-file PATH", "Rendered pr_review JSON to publish") do |value|
+          @review_file = value
         end
 
         opts.on("-h", "--help", "Print help") do
