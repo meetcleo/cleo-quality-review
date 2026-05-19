@@ -1,0 +1,50 @@
+name: Quality Review
+
+"on":
+  pull_request:
+  push:
+    branches-ignore:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality-review:
+    name: Quality review
+    runs-on: ubuntu-latest
+    container:
+      image: ruby:3.4.5
+
+    env:
+      BUNDLE_PATH: vendor/bundle
+      CLEO_QUALITY_REVIEW_OPEN_AI_KEY: ${{ secrets.CLEO_QUALITY_REVIEW_OPEN_AI_KEY }}
+
+    steps:
+      - name: Install system dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential git
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Ensure review secret is configured
+        run: |
+          if [ -z "${CLEO_QUALITY_REVIEW_OPEN_AI_KEY}" ]; then
+            echo "::error title=Missing secret::Set CLEO_QUALITY_REVIEW_OPEN_AI_KEY in repository secrets."
+            exit 1
+          fi
+
+      - name: Install gem dependencies
+        run: |
+          gem install bundler -v 4.0.10 --no-document
+          bundle _4.0.10_ install --jobs 4 --retry 3
+
+      - name: Show files compared with main
+        run: git diff --name-only --diff-filter=ACMRT origin/main...HEAD
+
+      - name: Run quality review
+        run: bundle exec check_quality --format github --checks all --changed
