@@ -18,6 +18,6 @@ Fasterer:
   Severity: Low
 
 
-You MUST NOT return so many items that the feedback is noisy and confusing. Limit yourself to four or five comments.
+You MUST NOT return so many items that the feedback is noisy and confusing. Limit yourself to maximum 10 comments.
 
 You MUST return your feedback in the Github Workflow Annotations format, as described on their website. (You can use this link as a source if you need to: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands).

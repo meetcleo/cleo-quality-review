@@ -12,7 +12,7 @@ You MUST NOT comment on the code diff itself unless the comment is directly supp
 
 ## Comment Selection
 
-1. Limit yourself to four or five inline comments at most.
+1. Limit yourself to ten comments at most.
 2. Prefer findings that map directly to a changed or commentable right-side line in the git diff.
 3. Omit low-value, duplicated, stale, or ambiguous findings.
 4. If a tool finding points to a file or line that is not visible in the provided diff, omit the inline comment.
@@ -36,6 +36,20 @@ The JSON MUST match this schema:
   ]
 }
 ```
+
+
+## Comment format:
+
+The comments should prioritise readability and actionabilty. Assume the reader is a junior developer, or someone who is not familiar with the language and framework. Be helpful, without being overly verbose. 
+
+Example format:
+```
+This code appears to have X issue. That may be likely to cause Y problem. Consider an alternative soltion, such as Z.
+
+_(Ref: Reek TooManyStatements, DuplicateMethodCall; Fasterer HashKeysEach)_
+```
+
+## Empty output:
 
 If there are no high-confidence inline comments, return:
 
