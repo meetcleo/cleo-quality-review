@@ -5,6 +5,8 @@ require_relative "checks/flog"
 require_relative "checks/reek"
 
 module CleoQualityReview
+  ##
+  # Registry for available quality check implementations
   class CheckRegistry
     CHECKS = {
       "reek" => Checks::Reek,
@@ -16,10 +18,20 @@ module CleoQualityReview
       "fast_ruby" => "fasterer",
     }.freeze
 
+    ##
+    # Resolve check names to check classes
+    # @param [Array<String>] names check names to resolve
+    # @return [Array<Class>] resolved check classes
+    # @raise [ArgumentError] if an unknown check name is provided
     def self.resolve(names)
       new.resolve(names)
     end
 
+    ##
+    # Resolve check names to check classes
+    # @param [Array<String>] names check names to resolve
+    # @return [Array<Class>] resolved check classes
+    # @raise [ArgumentError] if an unknown check name is provided
     def resolve(names)
       normalized_names = names.flat_map { |name| normalize_list_item(name) }
 

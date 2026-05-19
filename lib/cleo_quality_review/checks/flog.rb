@@ -4,6 +4,8 @@ require_relative "quality_check"
 
 module CleoQualityReview
   module Checks
+    ##
+    # Quality check implementation for Flog complexity analyzer
     class Flog < QualityCheck
       self.check_name = "flog"
       self.tool = "flog"

@@ -8,7 +8,14 @@ require_relative "../run_artifacts"
 
 module CleoQualityReview
   module Formatters
+    ##
+    # Formats quality review results as human-readable text via LLM
     class Human
+      ##
+      # @param [Run] run the quality review run to format
+      # @param [CommandRunner] command_runner for executing shell commands
+      # @param [LlmConfig] llm_config LLM provider configuration
+      # @param [LlmClient, nil] llm_client optional pre-configured client
       def initialize(run:, command_runner:, llm_config: LlmConfig.new, llm_client: nil)
         @run = run
         @command_runner = command_runner
@@ -16,6 +23,9 @@ module CleoQualityReview
         @llm_client = llm_client
       end
 
+      ##
+      # Format the run by generating an LLM review
+      # @return [String] human-readable review text
       def format
         llm_client.generate_review(prompt)
       end

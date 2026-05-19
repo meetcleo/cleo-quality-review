@@ -3,13 +3,22 @@
 require_relative "target_resolver"
 
 module CleoQualityReview
+  ##
+  # Builds the complete LLM prompt from run data and artifacts
   class PromptBuilder
+    ##
+    # @param [Run] run the quality review run
+    # @param [String] prompt base prompt template
+    # @param [RunArtifacts] artifacts run artifacts containing diffs and outputs
     def initialize(run:, prompt:, artifacts:)
       @run = run
       @prompt = prompt
       @artifacts = artifacts
     end
 
+    ##
+    # Build the complete prompt with all sections
+    # @return [String]
     def build
       [
         prompt,

@@ -7,7 +7,14 @@ require_relative "run_artifacts"
 require_relative "target_resolver"
 
 module CleoQualityReview
+  ##
+  # Orchestrates a complete quality review run
   class Runner
+    ##
+    # @param [Options::ParseResult] options parsed command-line options
+    # @param [CommandRunner] command_runner for executing shell commands
+    # @param [#now] clock time source for timestamps
+    # @param [CheckRegistry] check_registry registry for resolving check names
     def initialize(options:, command_runner: CommandRunner.new, clock: Time, check_registry: CheckRegistry.new)
       @options = options
       @command_runner = command_runner
@@ -15,6 +22,9 @@ module CleoQualityReview
       @check_registry = check_registry
     end
 
+    ##
+    # Execute the quality review
+    # @return [Run] results of the quality review
     def run
       timestamp = epoch_milliseconds
       changed = options.changed || options.files.empty?

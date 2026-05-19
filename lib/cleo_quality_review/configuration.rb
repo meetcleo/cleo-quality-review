@@ -4,6 +4,8 @@ require "set"
 require "yaml"
 
 module CleoQualityReview
+  ##
+  # Configuration for file include/exclude patterns
   class Configuration
     DEFAULT_CONFIG_PATH = File.expand_path("../../config/default.yml", __dir__)
     LOCAL_CONFIG_PATH = ".cleo_quality_review.yaml"
@@ -14,22 +16,36 @@ module CleoQualityReview
     GEM_DEFAULT_ALIASES = ["default", "gem:default"].freeze
     MATCH_FLAGS = File::FNM_PATHNAME | File::FNM_EXTGLOB
 
+    ##
+    # Load configuration from default and local config files
+    # @param [String] root root directory for local config lookup
+    # @return [Configuration]
     def self.load(root: Dir.pwd)
       Loader.new(root: root).load
     end
 
+    ##
+    # @param [Hash] data parsed configuration data
     def initialize(data)
       @data = data
     end
 
+    ##
+    # @return [Array<String>] glob patterns for files to include
     def include_patterns
       patterns_for(INCLUDE)
     end
 
+    ##
+    # @return [Array<String>] glob patterns for files to exclude
     def exclude_patterns
       patterns_for(EXCLUDE)
     end
 
+    ##
+    # Check if a file should be included based on configuration patterns
+    # @param [String] path file path to check
+    # @return [Boolean]
     def target_file?(path)
       normalized_path = normalize_path(path)
 
@@ -62,11 +78,18 @@ module CleoQualityReview
       pattern.to_s.delete_prefix("./").tr("\\", "/")
     end
 
+    ##
+    # Loads and merges configuration files with inheritance support
     class Loader
+      ##
+      # @param [String] root root directory for config file lookup
       def initialize(root:)
         @root = File.expand_path(root)
       end
 
+      ##
+      # Load merged configuration
+      # @return [Configuration]
       def load
         data = load_file(DEFAULT_CONFIG_PATH)
         local_config_path = File.join(root, LOCAL_CONFIG_PATH)

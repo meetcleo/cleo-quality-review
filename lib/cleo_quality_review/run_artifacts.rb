@@ -5,11 +5,17 @@ require "fileutils"
 require_relative "target_resolver"
 
 module CleoQualityReview
+  ##
+  # Manages artifacts produced during a quality review run
   class RunArtifacts
     ROOT = "tmp/quality_checks"
 
     attr_reader :timestamp, :target_files
 
+    ##
+    # @param [Integer] timestamp epoch milliseconds for the run
+    # @param [Array<String>] target_files file paths being analyzed
+    # @param [CommandRunner] command_runner for executing shell commands
     def initialize(timestamp:, target_files:, command_runner:)
       @timestamp = timestamp
       @target_files = target_files
@@ -17,22 +23,37 @@ module CleoQualityReview
       @path = File.join(ROOT, timestamp.to_s)
     end
 
+    ##
+    # Prepare the artifact directory and capture initial data
+    # @return [self]
     def prepare!
       reserve_path
       write_changes_diff
       self
     end
 
+    ##
+    # Write raw check output to a file
+    # @param [String] check_name name of the check
+    # @param [String] extension file extension for the output
+    # @param [String] output raw check output content
+    # @return [void]
     def write_check_output(check_name:, extension:, output:)
       check_path = File.join(path, check_name)
       FileUtils.mkdir_p(check_path)
       File.write(File.join(check_path, "raw_output.#{extension}"), output)
     end
 
+    ##
+    # Read the captured git diff for changes
+    # @return [String]
     def changes_diff
       File.read(changes_diff_path)
     end
 
+    ##
+    # Read all raw check outputs from the artifact directory
+    # @return [Hash{String => String}] check name to output content mapping
     def raw_check_outputs
       Dir.glob(File.join(path, "*", "raw_output.*")).sort.to_h do |filepath|
         check_name = File.basename(File.dirname(filepath))
@@ -40,6 +61,8 @@ module CleoQualityReview
       end
     end
 
+    ##
+    # @return [String] path to the artifacts directory
     def to_s
       path
     end

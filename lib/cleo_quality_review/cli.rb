@@ -8,13 +8,22 @@ require_relative "options"
 require_relative "runner"
 
 module CleoQualityReview
+  ##
+  # Command-line interface entry point
   class CLI
+    ##
+    # @param [Array<String>] argv command-line arguments
+    # @param [IO] stdout standard output stream
+    # @param [IO] stderr standard error stream
     def initialize(argv, stdout: $stdout, stderr: $stderr)
       @argv = argv
       @stdout = stdout
       @stderr = stderr
     end
 
+    ##
+    # Execute the CLI
+    # @return [Integer] exit code (0 for success, 1 for error)
     def run
       command_runner = CommandRunner.new
       options = Options.parse(argv)

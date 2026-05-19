@@ -6,21 +6,41 @@ require_relative "../result"
 
 module CleoQualityReview
   module Checks
+    ##
+    # Base class for quality check implementations
     class QualityCheck
       class << self
+        ##
+        # @!attribute [rw] check_name
+        #   @return [String] identifier for this check
+        # @!attribute [rw] tool
+        #   @return [String] tool name for result attribution
+        # @!attribute [rw] output_extension
+        #   @return [String] file extension for raw output
         attr_accessor :check_name, :tool, :output_extension
 
+        ##
+        # Set default output extension for subclasses
+        # @param [Class] subclass the inheriting class
+        # @return [void]
         def inherited(subclass)
           super
           subclass.output_extension = "txt"
         end
       end
 
+      ##
+      # @param [CommandRunner] command_runner for executing shell commands
+      # @param [Integer] timestamp epoch milliseconds for the run
       def initialize(command_runner:, timestamp:)
         @command_runner = command_runner
         @timestamp = timestamp
       end
 
+      ##
+      # Run the quality check on the given files
+      # @param [Array<String>] files file paths to analyze
+      # @return [CheckOutput]
       def run(files)
         return empty_output if files.empty?
 
@@ -78,6 +98,17 @@ module CleoQualityReview
       end
     end
 
+    ##
+    # Value object containing check output and parsed results
+    #
+    # @!attribute [r] check_name
+    #   @return [String] identifier for the check
+    # @!attribute [r] extension
+    #   @return [String] file extension for the raw output
+    # @!attribute [r] raw_output
+    #   @return [String] raw tool output
+    # @!attribute [r] results
+    #   @return [Array<Result>] parsed findings
     CheckOutput = Struct.new(:check_name, :extension, :raw_output, :results, keyword_init: true)
   end
 end

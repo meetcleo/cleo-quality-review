@@ -6,6 +6,8 @@ require_relative "quality_check"
 
 module CleoQualityReview
   module Checks
+    ##
+    # Quality check implementation for Reek code smell detector
     class Reek < QualityCheck
       self.check_name = "reek"
       self.tool = "reek"

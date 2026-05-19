@@ -4,13 +4,20 @@ require_relative "../prompt_loader"
 
 module CleoQualityReview
   module Formatters
+    ##
+    # Formats quality review results as GitHub Actions workflow commands
     class Github
       DEFAULT_SUMMARY_LIMIT = 5
 
+      ##
+      # @param [Run] run the quality review run to format
       def initialize(run:)
         @run = run
       end
 
+      ##
+      # Format the run as GitHub Actions annotations
+      # @return [String] workflow commands output
       def format
         return "" if findings.empty?
 

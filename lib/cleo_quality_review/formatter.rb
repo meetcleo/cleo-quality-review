@@ -5,12 +5,20 @@ require_relative "formatters/github"
 require_relative "formatters/human"
 
 module CleoQualityReview
+  ##
+  # Dispatches formatting to the appropriate formatter based on run configuration
   class Formatter
+    ##
+    # @param [Run] run the quality review run to format
+    # @param [CommandRunner] command_runner for executing shell commands
     def initialize(run:, command_runner:)
       @run = run
       @command_runner = command_runner
     end
 
+    ##
+    # Format the run results using the configured formatter
+    # @return [String] formatted output
     def format
       formatter_class.new(**formatter_args).format
     end

@@ -3,11 +3,23 @@
 require_relative "configuration"
 
 module CleoQualityReview
+  ##
+  # Resolves target files for quality review based on git changes and configuration
   class TargetResolver
     BASE_REF = "origin/main"
 
+    ##
+    # Value object containing resolved file lists
+    #
+    # @!attribute [r] files
+    #   @return [Array<String>] all target file paths
+    # @!attribute [r] ruby_files
+    #   @return [Array<String>] Ruby file paths
     Target = Struct.new(:files, :ruby_files, keyword_init: true)
 
+    ##
+    # @param [CommandRunner] command_runner for executing git commands
+    # @param [Configuration] configuration file filtering configuration
     def initialize(command_runner:, configuration: Configuration.load)
       @command_runner = command_runner
       @configuration = configuration

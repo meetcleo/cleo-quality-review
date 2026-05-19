@@ -3,17 +3,39 @@
 require "optparse"
 
 module CleoQualityReview
+  ##
+  # Parses command-line options for the quality review CLI
   class Options
     FORMATS = %w[human agent github].freeze
     DEFAULT_FORMAT = "human"
     DEFAULT_CHECKS = ["all"].freeze
 
+    ##
+    # Value object containing parsed command-line options
+    #
+    # @!attribute [r] format
+    #   @return [String] output format
+    # @!attribute [r] checks
+    #   @return [Array<String>] checks to run
+    # @!attribute [r] files
+    #   @return [Array<String>] explicit file paths
+    # @!attribute [r] exclude
+    #   @return [Array<String>] checks to exclude
+    # @!attribute [r] changed
+    #   @return [Boolean] whether to filter to changed files only
     ParseResult = Struct.new(:format, :checks, :files, :exclude, :changed, keyword_init: true)
 
+    ##
+    # Parse command-line arguments
+    # @param [Array<String>] argv command-line arguments
+    # @return [ParseResult]
+    # @raise [OptionParser::ParseError] if arguments are invalid
     def self.parse(argv)
       new(argv).parse
     end
 
+    ##
+    # @param [Array<String>] argv command-line arguments
     def initialize(argv)
       @argv = argv.dup
       @format = DEFAULT_FORMAT
@@ -23,6 +45,10 @@ module CleoQualityReview
       @changed = false
     end
 
+    ##
+    # Parse the arguments and return the result
+    # @return [ParseResult]
+    # @raise [OptionParser::InvalidArgument] if format is invalid
     def parse
       parser.parse!(argv)
       validate_format!
