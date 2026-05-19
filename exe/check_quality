@@ -9,9 +9,7 @@ require "cleo_quality_review/cli"
 # This should not be used when packaging in production
 if ENV.fetch('CLEO_QUALITY_REVIEW_DEV', 'false') == 'true'
   require 'dotenv'
-  Dotenv.load("./.env.development.local")
-  require 'debug'
-  debugger
+  Dotenv.load(".env.development.local")
 end
 
 exit CleoQualityReview::CLI.new(ARGV).run
