@@ -1,49 +1,62 @@
 # frozen_string_literal: true
 
-require_relative "formatters/agent"
-require_relative "formatters/github"
-require_relative "formatters/human"
+require_relative "llm_client"
+require_relative "llm_config"
+require_relative "prompt_builder"
+require_relative "prompt_loader"
+require_relative "run_artifacts"
 
 module CleoQualityReview
   ##
-  # Dispatches formatting to the appropriate formatter based on run configuration
+  # Formats quality review results using an LLM with format-specific prompts
   class Formatter
     ##
     # @param [Run] run the quality review run to format
     # @param [CommandRunner] command_runner for executing shell commands
-    def initialize(run:, command_runner:)
+    # @param [LlmConfig] llm_config LLM provider configuration
+    # @param [LlmClient, nil] llm_client optional pre-configured client
+    def initialize(run:, command_runner:, llm_config: LlmConfig.new, llm_client: nil)
       @run = run
       @command_runner = command_runner
+      @llm_config = llm_config
+      @llm_client = llm_client
     end
 
     ##
-    # Format the run results using the configured formatter
-    # @return [String] formatted output
+    # Format the run by generating an LLM review
+    # @return [String] formatted review text
     def format
-      formatter_class.new(**formatter_args).format
+      llm_client.generate_review(prompt)
     end
 
     private
 
-    attr_reader :run, :command_runner
+    attr_reader :run, :command_runner, :llm_config
 
-    def formatter_class
-      case run.format
-      when "agent"
-        Formatters::Agent
-      when "github"
-        Formatters::Github
-      when "human"
-        Formatters::Human
-      else
-        raise ArgumentError, "Unknown format #{run.format.inspect}"
-      end
+    ##
+    # @return [String]
+    def prompt
+      PromptBuilder.new(
+        run: run,
+        prompt: PromptLoader.load(format: run.format),
+        artifacts: artifacts,
+      ).build
     end
 
-    def formatter_args
-      args = { run: run }
-      args[:command_runner] = command_runner if run.format == "human"
-      args
+    ##
+    # @return [RunArtifacts]
+    def artifacts
+      @artifacts ||= run.artifacts || RunArtifacts.new(
+        timestamp: run.timestamp,
+        target_files: run.target_files,
+        command_runner: command_runner,
+      )
+    end
+
+    ##
+    # @return [LlmClient]
+    def llm_client
+      @llm_client ||= LlmClient.new(config: llm_config, log: run.log)
     end
   end
 end

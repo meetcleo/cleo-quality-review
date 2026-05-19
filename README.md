@@ -19,9 +19,9 @@ CLEO_QUALITY_REVIEW_OPEN_AI_KEY=sk-... bundle exec check_quality --format human 
 
 The gem embeds Ruby check adapters for Reek, Flog, and Fasterer. Each run writes raw tool artifacts to `tmp/quality_checks/<epoch>/<check>/raw_output.*` and also normalizes findings for machine-readable output.
 
-`agent` output prints one JSON document containing run metadata, the git diff, all raw tool outputs, format instructions, and normalized findings.
+`agent` output uses the agent prompt to condense run metadata, the git diff, raw tool outputs, and normalized findings into JSON for coding agents.
 
-`github` output prints GitHub workflow annotation commands for normalized findings, followed by a notice summarizing the top actionable issues when findings are present. Configure the summary count with `CLEO_QUALITY_REVIEW_GITHUB_SUMMARY_LIMIT`.
+`github` output uses the GitHub prompt to condense the full report into GitHub workflow annotations for the most relevant findings.
 
 ## Prompts
 
@@ -55,11 +55,11 @@ AllTools:
 
 ## LLM Configuration
 
-Human output uses OpenAI's Responses API.
+All output formats use OpenAI's Responses API.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `CLEO_QUALITY_REVIEW_OPEN_AI_KEY` | Yes (for `--format human`) | OpenAI API key |
+| `CLEO_QUALITY_REVIEW_OPEN_AI_KEY` | Yes | OpenAI API key |
 | `CLEO_QUALITY_REVIEW_TIMEOUT_SECONDS` | No | OpenAI request timeout in seconds (default: 180) |
 
 The model is currently fixed to `gpt-5.5`.
@@ -113,4 +113,4 @@ flowchart LR
     classDef neutral fill:#DAF0E5,stroke:#46635E,stroke-width:2px,color:#1D3733,rx:10,ry:10
 ```
 
-The non-human formats are deterministic: `agent` serializes the `Run` plus prompt instructions as JSON, and `github` turns normalized findings into GitHub Actions annotations. The `human` formatter builds a prompt from the same run data and artifacts, then sends it through the configured LLM provider.
+All formats build a prompt from the run data and artifacts, then send it through the configured LLM provider. The selected format determines which prompt is loaded and therefore the output shape.
