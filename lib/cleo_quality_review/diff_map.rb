@@ -9,6 +9,66 @@ module CleoQualityReview
     HUNK_HEADER = /^@@ -\d+(?:,\d+)? \+(?<line>\d+)(?:,\d+)? @@/.freeze
 
     ##
+    # Stateful parser for file and right-side hunk line transitions
+    class DiffParser
+      def initialize(commentable_lines)
+        @commentable_lines = commentable_lines
+        @path = nil
+        @new_line = nil
+      end
+
+      def parse(diff)
+        diff.each_line { |line| parse_line(line) }
+      end
+
+      private
+
+      attr_reader :commentable_lines, :new_line, :path
+
+      def parse_line(line)
+        if line.start_with?("+++ ")
+          start_file(line)
+        elsif (line_number = hunk_start_line(line))
+          @new_line = line_number
+        elsif in_hunk?
+          parse_hunk_line(line)
+        end
+      end
+
+      def start_file(line)
+        @path = normalize_path(line.delete_prefix("+++ ").strip)
+        @new_line = nil
+      end
+
+      def hunk_start_line(line)
+        match = line.match(HUNK_HEADER)
+        match[:line].to_i if match
+      end
+
+      def in_hunk?
+        path && new_line
+      end
+
+      def parse_hunk_line(line)
+        case line[0]
+        when "+", " "
+          commentable_lines[path] << new_line
+          @new_line += 1
+        when "-"
+          new_line
+        else
+          @new_line = nil
+        end
+      end
+
+      def normalize_path(path)
+        return nil if path == "/dev/null"
+
+        path.delete_prefix("b/")
+      end
+    end
+
+    ##
     # @param [String] diff unified git diff content
     def initialize(diff)
       @diff = diff.to_s
@@ -29,37 +89,7 @@ module CleoQualityReview
     attr_reader :commentable_lines, :diff
 
     def parse
-      current_path = nil
-      new_line = nil
-
-      diff.each_line do |line|
-        if line.start_with?("+++ ")
-          current_path = normalize_path(line.delete_prefix("+++ ").strip)
-          new_line = nil
-        elsif (match = line.match(HUNK_HEADER))
-          new_line = match[:line].to_i
-        elsif current_path && new_line
-          new_line = parse_hunk_line(line, current_path, new_line)
-        end
-      end
-    end
-
-    def parse_hunk_line(line, current_path, new_line)
-      case line[0]
-      when "+", " "
-        commentable_lines[current_path] << new_line
-        new_line + 1
-      when "-"
-        new_line
-      else
-        nil
-      end
-    end
-
-    def normalize_path(path)
-      return nil if path == "/dev/null"
-
-      path.delete_prefix("b/")
+      DiffParser.new(commentable_lines).parse(diff)
     end
   end
 end

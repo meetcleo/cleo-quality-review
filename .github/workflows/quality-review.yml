@@ -43,11 +43,14 @@ jobs:
           git rev-parse --is-inside-work-tree
           git fetch --no-tags --prune origin +refs/heads/main:refs/remotes/origin/main
 
-      - name: Ensure review secret is configured
+      - name: Detect review availability
+        id: review_config
         run: |
           if [ -z "${CLEO_QUALITY_REVIEW_OPEN_AI_KEY}" ]; then
-            echo "::error title=Missing secret::Set CLEO_QUALITY_REVIEW_OPEN_AI_KEY in repository secrets."
-            exit 1
+            echo "enabled=false" >> "${GITHUB_OUTPUT}"
+            echo "::notice title=Quality review skipped::CLEO_QUALITY_REVIEW_OPEN_AI_KEY is unavailable; skipping OpenAI-backed render and PR review."
+          else
+            echo "enabled=true" >> "${GITHUB_OUTPUT}"
           fi
 
       - name: Cache bundled gems
@@ -74,14 +77,15 @@ jobs:
           echo "Review ID: ${review_id}"
 
       - name: Render workflow annotations
+        if: steps.review_config.outputs.enabled == 'true'
         run: bundle exec check_quality render --format github --review-id "${{ steps.analyze.outputs.review_id }}"
 
       - name: Render PR review JSON
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.review_config.outputs.enabled == 'true'
         run: bundle exec check_quality render --format pr_review --review-id "${{ steps.analyze.outputs.review_id }}" > "tmp/quality_checks/${{ steps.analyze.outputs.review_id }}/pr_review.json"
 
       - name: Publish PR review
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.review_config.outputs.enabled == 'true'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: bundle exec check_quality publish-pr-review --review-id "${{ steps.analyze.outputs.review_id }}"

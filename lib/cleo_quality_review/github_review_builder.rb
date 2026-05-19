@@ -13,6 +13,27 @@ module CleoQualityReview
     MAX_BODY_LENGTH = 3_500
 
     ##
+    # Normalized rendered comment that can be mapped onto a PR diff line
+    InlineComment = Struct.new(:path, :line, :body, keyword_init: true) do
+      def valid?
+        path != "" && line.positive? && body != ""
+      end
+
+      def commentable_on?(diff_map)
+        valid? && diff_map.commentable?(path, line)
+      end
+
+      def to_review_payload(body:)
+        {
+          path: path,
+          line: line,
+          side: "RIGHT",
+          body: body,
+        }
+      end
+    end
+
+    ##
     # @param [Run] run completed quality review run
     # @param [String] rendered_review JSON produced by the pr_review formatter
     def initialize(run:, rendered_review:)
@@ -58,29 +79,17 @@ module CleoQualityReview
     end
 
     def normalized_comment(comment)
-      {
+      InlineComment.new(
         path: comment["path"].to_s,
         line: comment["line"].to_i,
         body: comment["body"].to_s.strip,
-      }
+      )
     end
 
     def inline_comment_payload(comment)
-      return unless commentable?(comment)
+      return unless comment.commentable_on?(diff_map)
 
-      {
-        path: comment.fetch(:path),
-        line: comment.fetch(:line),
-        side: "RIGHT",
-        body: truncate(comment.fetch(:body)),
-      }
-    end
-
-    def commentable?(comment)
-      comment.fetch(:path) != "" &&
-        comment.fetch(:line).positive? &&
-        comment.fetch(:body) != "" &&
-        diff_map.commentable?(comment.fetch(:path), comment.fetch(:line))
+      comment.to_review_payload(body: truncate(comment.body))
     end
 
     def rendered_comments
@@ -115,10 +124,11 @@ module CleoQualityReview
 
     def inline_summary(comments)
       requested = rendered_comments.length
+      comment_count = comments.length
       return "No rendered comments mapped to commentable PR diff lines." if comments.empty? && requested.positive?
-      return if requested == comments.length
+      return if requested == comment_count
 
-      omitted = requested - comments.length
+      omitted = requested - comment_count
       "#{omitted} rendered comment#{'s' unless omitted == 1} were omitted because they did not map to commentable PR diff lines."
     end
 

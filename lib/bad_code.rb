@@ -1,11 +1,12 @@
 class BadCode
   def a
-    [{}].map.each do |f|
-      puts f
-      # Added a line to see if Fasterer would catch it?
-      f.each_key do |k|
-        puts k
-      end
-    end
+    [{}].each { |fields| print_fields(fields) }
+  end
+
+  private
+
+  def print_fields(fields)
+    puts fields
+    fields.each_key { |key| puts key }
   end
 end

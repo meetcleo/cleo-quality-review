@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require "digest"
+require "json"
+
 require_relative "changes_diff"
 require_relative "check_registry"
 require_relative "command_runner"
@@ -11,6 +14,10 @@ module CleoQualityReview
   ##
   # Orchestrates a complete quality review run
   class Runner
+    ##
+    # Grouped values resolved at the start of an analysis run
+    AnalysisContext = Struct.new(:timestamp, :target, :changes, :review_id, :check_classes, keyword_init: true)
+
     ##
     # @param [Options::ParseResult] options parsed command-line options
     # @param [CommandRunner] command_runner for executing shell commands
@@ -27,24 +34,14 @@ module CleoQualityReview
     # Execute the quality review
     # @return [Run] results of the quality review
     def run
-      timestamp = epoch_milliseconds
-      target = resolve_target
-      changes = changes_diff(target)
-      artifacts = prepare_artifacts(timestamp: timestamp, target: target, changes: changes)
+      context = analysis_context
+      artifacts = prepare_artifacts(context)
       return reusable_run(artifacts) if artifacts.complete?
 
-      check_classes = resolve_checks
-      check_outputs = run_checks(check_classes, target.ruby_files, timestamp)
+      check_outputs = run_checks(context.check_classes, context.target.ruby_files, context.timestamp)
       write_check_outputs(artifacts, check_outputs)
 
-      run = build_run(
-        timestamp: timestamp,
-        target: target,
-        changes: changes,
-        artifacts: artifacts,
-        check_classes: check_classes,
-        check_outputs: check_outputs,
-      )
+      run = build_run(context, artifacts, check_outputs)
       persist_run(artifacts, run)
       run
     end
@@ -57,6 +54,21 @@ module CleoQualityReview
       (clock.now.to_r * 1_000).to_i
     end
 
+    def analysis_context
+      timestamp = epoch_milliseconds
+      target = resolve_target
+      changes = changes_diff(target)
+      check_classes = resolve_checks
+
+      AnalysisContext.new(
+        timestamp: timestamp,
+        target: target,
+        changes: changes,
+        review_id: review_id_for(changes, check_classes),
+        check_classes: check_classes,
+      )
+    end
+
     def resolve_target
       changed = options.changed || options.files.empty?
       TargetResolver.new(command_runner: command_runner).resolve(options.files, changed: changed)
@@ -66,12 +78,12 @@ module CleoQualityReview
       ChangesDiff.new(target_files: target.files, command_runner: command_runner)
     end
 
-    def prepare_artifacts(timestamp:, target:, changes:)
+    def prepare_artifacts(context)
       RunArtifacts.new(
-        timestamp: timestamp,
-        review_id: changes.review_id,
-        target_files: target.files,
-        changes_diff: changes.to_s,
+        timestamp: context.timestamp,
+        review_id: context.review_id,
+        target_files: context.target.files,
+        changes_diff: context.changes.to_s,
       ).prepare!
     end
 
@@ -103,14 +115,14 @@ module CleoQualityReview
       end
     end
 
-    def build_run(timestamp:, target:, changes:, artifacts:, check_classes:, check_outputs:)
+    def build_run(context, artifacts, check_outputs)
       Run.new(
-        timestamp: timestamp,
-        review_id: changes.review_id,
+        timestamp: context.timestamp,
+        review_id: context.review_id,
         format: options.format,
-        checks: check_classes.map(&:check_name),
-        target_files: target.files,
-        ruby_files: target.ruby_files,
+        checks: context.check_classes.map(&:check_name),
+        target_files: context.target.files,
+        ruby_files: context.target.ruby_files,
         run_directory: artifacts.to_s,
         results: check_outputs.flat_map(&:results),
         artifacts: artifacts,
@@ -122,6 +134,15 @@ module CleoQualityReview
       artifacts.write_results(run.results)
       artifacts.write_manifest(run)
       artifacts.mark_complete!
+    end
+
+    def review_id_for(changes, check_classes)
+      Digest::SHA256.hexdigest(
+        JSON.generate(
+          diff: changes.to_s,
+          checks: check_classes.map(&:check_name).sort,
+        ),
+      )
     end
   end
 end

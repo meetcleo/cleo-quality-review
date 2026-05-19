@@ -6,12 +6,9 @@ require "cleo_quality_review/open_ai_client"
 module CleoQualityReview
   class OpenAiClientTest < Minitest::Test
     FakeConfig = Struct.new(:api_key, :model, :timeout_seconds, keyword_init: true)
-    FakeTransport = Struct.new(:response, :error, :received_uri, :received_headers, :received_body, :received_timeout_seconds, keyword_init: true) do
-      def post_json(uri:, headers:, body:, timeout_seconds:)
-        self.received_uri = uri
-        self.received_headers = headers
-        self.received_body = body
-        self.received_timeout_seconds = timeout_seconds
+    FakeTransport = Struct.new(:response, :error, :received_request, keyword_init: true) do
+      def post_json(request)
+        self.received_request = request
         raise error if error
 
         response
@@ -26,17 +23,13 @@ module CleoQualityReview
       )
 
       assert_equal "analysis", client.generate_review("prompt")
-      assert_equal URI("https://api.openai.com/v1/responses"), transport.received_uri
-      assert_equal "Bearer secret", transport.received_headers.fetch("Authorization")
-      assert_equal "application/json", transport.received_headers.fetch("Content-Type")
-      assert_equal({ model: "gpt-5.5", input: "prompt" }, transport.received_body)
-      assert_equal 180, transport.received_timeout_seconds
+      assert_responses_api_request(transport.received_request)
     end
 
     def test_http_transport_configures_net_http_timeouts
       fake_http = FakeHttp.new
       received = {}
-      start = lambda do |hostname, port, use_ssl:, &block|
+      http_start = lambda do |hostname, port, use_ssl:, &block|
         received[:hostname] = hostname
         received[:port] = port
         received[:use_ssl] = use_ssl
@@ -44,34 +37,20 @@ module CleoQualityReview
         block.call(fake_http)
       end
 
-      original_verbose = $VERBOSE
-      $VERBOSE = nil
-      Net::HTTP.singleton_class.alias_method(:start_without_timeout_test, :start)
-      Net::HTTP.define_singleton_method(:start, &start)
-      $VERBOSE = original_verbose
-
-      begin
-        response = OpenAiHttpTransport.new.post_json(
-          uri: URI("https://api.openai.com/v1/responses"),
-          headers: { "Content-Type" => "application/json" },
-          body: { input: "prompt" },
-          timeout_seconds: 180,
+      response = with_stubbed_net_http_start(http_start) do
+        OpenAiHttpTransport.new.post_json(
+          OpenAiHttpRequest.new(
+            uri: URI("https://api.openai.com/v1/responses"),
+            headers: { "Content-Type" => "application/json" },
+            body: { input: "prompt" },
+            timeout_seconds: 180,
+          ),
         )
-
-        assert_equal 200, response.status_code
-      ensure
-        $VERBOSE = nil
-        Net::HTTP.singleton_class.alias_method(:start, :start_without_timeout_test)
-        Net::HTTP.singleton_class.remove_method(:start_without_timeout_test)
-        $VERBOSE = original_verbose
       end
 
-      assert_equal "api.openai.com", received[:hostname]
-      assert_equal 443, received[:port]
-      assert_equal true, received[:use_ssl]
-      assert_equal 180, fake_http.open_timeout
-      assert_equal 180, fake_http.read_timeout
-      assert_equal 180, fake_http.write_timeout
+      assert_equal 200, response.status_code
+      assert_http_start(received)
+      assert_http_timeouts(fake_http)
     end
 
     def test_extracts_nested_response_text
@@ -122,6 +101,45 @@ module CleoQualityReview
 
       assert_includes error.message, "timed out after 180 seconds"
       assert_includes error.message, "Net::ReadTimeout"
+    end
+
+    private
+
+    def assert_responses_api_request(request)
+      headers = request.headers
+
+      assert_equal URI("https://api.openai.com/v1/responses"), request.uri
+      assert_equal "Bearer secret", headers.fetch("Authorization")
+      assert_equal "application/json", headers.fetch("Content-Type")
+      assert_equal({ model: "gpt-5.5", input: "prompt" }, request.body)
+      assert_equal 180, request.timeout_seconds
+    end
+
+    def assert_http_start(received)
+      assert_equal "api.openai.com", received[:hostname]
+      assert_equal 443, received[:port]
+      assert_equal true, received[:use_ssl]
+    end
+
+    def assert_http_timeouts(fake_http)
+      assert_equal 180, fake_http.open_timeout
+      assert_equal 180, fake_http.read_timeout
+      assert_equal 180, fake_http.write_timeout
+    end
+
+    def with_stubbed_net_http_start(http_start)
+      original_verbose = $VERBOSE
+      $VERBOSE = nil
+      Net::HTTP.singleton_class.alias_method(:start_without_timeout_test, :start)
+      Net::HTTP.define_singleton_method(:start, &http_start)
+      $VERBOSE = original_verbose
+
+      yield
+    ensure
+      $VERBOSE = nil
+      Net::HTTP.singleton_class.alias_method(:start, :start_without_timeout_test)
+      Net::HTTP.singleton_class.remove_method(:start_without_timeout_test)
+      $VERBOSE = original_verbose
     end
 
     class FakeHttp

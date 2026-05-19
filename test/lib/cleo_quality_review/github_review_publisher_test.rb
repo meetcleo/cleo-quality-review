@@ -16,8 +16,7 @@ module CleoQualityReview
 
     def test_skips_without_pull_request_context
       in_tmpdir do |dir|
-        event_path = File.join(dir, "event.json")
-        File.write(event_path, JSON.generate({ "push" => {} }))
+        event_path = write_event(dir, { "push" => {} })
         publisher = GitHubReviewPublisher.new(
           run: run_with_findings,
           rendered_review: rendered_review,
@@ -44,18 +43,7 @@ module CleoQualityReview
 
     def test_publishes_review_payload
       in_tmpdir do |dir|
-        event_path = File.join(dir, "event.json")
-        File.write(
-          event_path,
-          JSON.generate(
-            {
-              "number" => 42,
-              "pull_request" => {
-                "head" => { "sha" => "head-sha" },
-              },
-            },
-          ),
-        )
+        event_path = write_event(dir, pull_request_event)
         requests = []
         publisher = GitHubReviewPublisher.new(
           run: run_with_findings,
@@ -67,20 +55,45 @@ module CleoQualityReview
             "GITHUB_TOKEN" => "token",
           },
         )
-        publisher.define_singleton_method(:request_json) do |method, uri, body = nil|
-          requests << [method, uri.to_s, body]
-          method == :get ? Response.new(status_code: 200, body: "[]") : Response.new(status_code: 201, body: "{}")
-        end
+        stub_requests(publisher, requests)
 
         assert_equal "Published PR review for review ID review-id.", publisher.publish
-        assert_equal :get, requests.first.first
-        assert_equal :post, requests.last.first
-        assert_equal "https://api.github.test/repos/owner/repo/pulls/42/reviews", requests.last[1]
-        assert_equal "head-sha", requests.last[2].fetch(:commit_id)
+        assert_review_requests(requests)
       end
     end
 
     private
+
+    def write_event(dir, event)
+      event_path = File.join(dir, "event.json")
+      File.write(event_path, JSON.generate(event))
+      event_path
+    end
+
+    def pull_request_event
+      {
+        "number" => 42,
+        "pull_request" => {
+          "head" => { "sha" => "head-sha" },
+        },
+      }
+    end
+
+    def stub_requests(publisher, requests)
+      publisher.define_singleton_method(:request_json) do |method, uri, body = nil|
+        requests << [method, uri.to_s, body]
+        method == :get ? Response.new(status_code: 200, body: "[]") : Response.new(status_code: 201, body: "{}")
+      end
+    end
+
+    def assert_review_requests(requests)
+      review_request = requests.last
+
+      assert_equal :get, requests.first.first
+      assert_equal :post, review_request.first
+      assert_equal "https://api.github.test/repos/owner/repo/pulls/42/reviews", review_request[1]
+      assert_equal "head-sha", review_request[2].fetch(:commit_id)
+    end
 
     def run_with_findings
       artifacts = RunArtifacts.new(
