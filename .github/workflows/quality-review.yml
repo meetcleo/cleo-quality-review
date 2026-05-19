@@ -38,6 +38,7 @@ jobs:
 
       - name: Prepare git comparison
         run: |
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
           git rev-parse --is-inside-work-tree
           git fetch --no-tags --prune origin +refs/heads/main:refs/remotes/origin/main
 
