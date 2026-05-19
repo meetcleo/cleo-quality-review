@@ -71,7 +71,7 @@ module CleoQualityReview
       return if config.open_ai_config.configured?
 
       raise MissingLlmConfigurationError,
-        "Missing OpenAI API key. Set #{config.open_ai_config.api_key_env} or #{OpenAiConfig::API_KEY_ENV_OVERRIDE}."
+        "Missing OpenAI API key. Set #{config.open_ai_config.api_key_env}."
     end
 
     ##

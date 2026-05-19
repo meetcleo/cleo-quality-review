@@ -36,7 +36,7 @@ module CleoQualityReview
     # Check if the OpenAI configuration is complete
     # @return [Boolean]
     def configured?
-      api_key.to_s.strip != ""
+      env.fetch(OPEN_AI_API_KEY, "").to_s.strip != ""
     end
   end
 end

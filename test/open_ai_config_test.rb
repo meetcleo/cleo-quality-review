@@ -5,27 +5,25 @@ require "cleo_quality_review/open_ai_config"
 
 module CleoQualityReview
   class OpenAiConfigTest < Minitest::Test
-    def test_defaults_to_requested_env_and_model
-      config = OpenAiConfig.new(env: { "OPEN_AI_API_KEY" => "secret" })
+    def test_reads_api_key_from_env
+      config = OpenAiConfig.new(env: { "CLEO_QUALITY_REVIEW_OPEN_AI_KEY" => "secret" })
 
-      assert_equal "OPEN_AI_API_KEY", config.api_key_env
+      assert_equal "CLEO_QUALITY_REVIEW_OPEN_AI_KEY", config.api_key_env
       assert_equal "secret", config.api_key
       assert_equal "gpt-5.5", config.model
-      assert_equal true, config.configured?
+      assert_predicate config, :configured?
     end
 
-    def test_allows_env_and_model_overrides
-      config = OpenAiConfig.new(
-        env: {
-          "CLEO_QUALITY_REVIEW_OPENAI_API_KEY_ENV" => "OPENAI_ACCESS_TOKEN",
-          "OPENAI_ACCESS_TOKEN" => "repo-secret",
-          "CLEO_QUALITY_REVIEW_OPENAI_MODEL" => "gpt-5.2",
-        },
-      )
+    def test_configured_returns_false_when_api_key_missing
+      config = OpenAiConfig.new(env: {})
 
-      assert_equal "OPENAI_ACCESS_TOKEN", config.api_key_env
-      assert_equal "repo-secret", config.api_key
-      assert_equal "gpt-5.2", config.model
+      assert_raises(KeyError) { config.api_key }
+    end
+
+    def test_configured_returns_false_when_api_key_blank
+      config = OpenAiConfig.new(env: { "CLEO_QUALITY_REVIEW_OPEN_AI_KEY" => "  " })
+
+      refute_predicate config, :configured?
     end
   end
 end

@@ -12,7 +12,7 @@ module CleoQualityReview
     end
 
     def test_open_ai_config_reads_api_key
-      config = LlmConfig.new(env: { "OPEN_AI_API_KEY" => "secret" })
+      config = LlmConfig.new(env: { "CLEO_QUALITY_REVIEW_OPEN_AI_KEY" => "secret" })
 
       assert_equal "secret", config.open_ai_config.api_key
     end

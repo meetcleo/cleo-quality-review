@@ -39,7 +39,7 @@ module CleoQualityReview
         end
 
         assert_includes error.message, "Missing OpenAI API key"
-        assert_includes error.message, "OPEN_AI_API_KEY"
+        assert_includes error.message, "CLEO_QUALITY_REVIEW_OPEN_AI_KEY"
       end
     end
   end
