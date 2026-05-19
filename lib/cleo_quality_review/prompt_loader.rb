@@ -42,16 +42,8 @@ module CleoQualityReview
       [
         File.join(LOCAL_PROMPTS_DIRECTORY, "prompts", "#{format}.md"),
         File.join(LOCAL_PROMPTS_DIRECTORY, "#{format}.md"),
-        legacy_local_prompt_path,
         File.join(GEM_PROMPTS_DIRECTORY, "#{format}.md"),
-        File.join(GEM_PROMPTS_DIRECTORY, "default.md"),
       ].compact
-    end
-
-    def legacy_local_prompt_path
-      return unless format == "human"
-
-      File.join(LOCAL_PROMPTS_DIRECTORY, "prompt.md")
     end
   end
 end
