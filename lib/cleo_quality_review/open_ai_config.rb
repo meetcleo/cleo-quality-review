@@ -2,10 +2,8 @@
 
 module CleoQualityReview
   class OpenAiConfig
-    DEFAULT_API_KEY_ENV = "OPEN_AI_API_KEY"
-    API_KEY_ENV_OVERRIDE = "CLEO_QUALITY_REVIEW_OPENAI_API_KEY_ENV"
+    OPEN_AI_API_KEY = "CLEO_QUALITY_REVIEW_OPEN_AI_KEY"
     DEFAULT_MODEL = "gpt-5.5"
-    MODEL_OVERRIDE = "CLEO_QUALITY_REVIEW_OPENAI_MODEL"
 
     attr_reader :env
 
@@ -14,20 +12,14 @@ module CleoQualityReview
     end
 
     def api_key_env
-      env.fetch(API_KEY_ENV_OVERRIDE, DEFAULT_API_KEY_ENV).then do |value|
-        value.to_s.empty? ? DEFAULT_API_KEY_ENV : value
-      end
+      OPEN_AI_API_KEY
     end
 
     def api_key
-      env.fetch(api_key_env, nil)
+      env.fetch(OPEN_AI_API_KEY)
     end
 
-    def model
-      env.fetch(MODEL_OVERRIDE, DEFAULT_MODEL).then do |value|
-        value.to_s.empty? ? DEFAULT_MODEL : value
-      end
-    end
+    def model = DEFAULT_MODEL
 
     def configured?
       api_key.to_s.strip != ""
