@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "cleo_quality_review"
-require_relative "test_helper"
+require_relative "../test_helper"
 
 module CleoQualityReview
   class RequireTest < Minitest::Test

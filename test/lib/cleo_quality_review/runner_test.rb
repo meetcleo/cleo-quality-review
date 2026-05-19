@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "test_helper"
+require_relative "../../test_helper"
 require "cleo_quality_review/checks/quality_check"
 require "cleo_quality_review/options"
 require "cleo_quality_review/runner"
