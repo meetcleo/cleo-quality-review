@@ -37,6 +37,7 @@ module CleoQualityReview
       <<~MARKDOWN
         ## Run metadata
 
+        Review ID: #{run.review_id}
         Timestamp: #{run.timestamp}
         Checks: #{run.checks.join(", ")}
         Target files: #{run.target_files.empty? ? "(none)" : run.target_files.join(", ")}

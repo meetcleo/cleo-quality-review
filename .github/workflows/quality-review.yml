@@ -1,0 +1,91 @@
+name: Quality Review
+
+"on":
+  pull_request:
+  push:
+    branches-ignore:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  quality-review:
+    name: Quality review
+    runs-on: ubuntu-latest
+    container:
+      image: ruby:3.4.5
+
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}
+
+    env:
+      BUNDLE_PATH: vendor/bundle
+      CLEO_QUALITY_REVIEW_OPEN_AI_KEY: ${{ secrets.CLEO_QUALITY_REVIEW_OPEN_AI_KEY }}
+
+    steps:
+      - name: Install system dependencies
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends build-essential git
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare git comparison
+        run: |
+          git config --global --add safe.directory "${GITHUB_WORKSPACE}"
+          git rev-parse --is-inside-work-tree
+          git fetch --no-tags --prune origin +refs/heads/main:refs/remotes/origin/main
+
+      - name: Detect review availability
+        id: review_config
+        run: |
+          if [ -z "${CLEO_QUALITY_REVIEW_OPEN_AI_KEY}" ]; then
+            echo "enabled=false" >> "${GITHUB_OUTPUT}"
+            echo "::notice title=Quality review skipped::CLEO_QUALITY_REVIEW_OPEN_AI_KEY is unavailable; skipping OpenAI-backed render and PR review."
+          else
+            echo "enabled=true" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Cache bundled gems
+        uses: actions/cache@v4
+        with:
+          path: vendor/bundle
+          key: quality-review-bundle-ruby-3.4.5-${{ runner.os }}-${{ hashFiles('Gemfile.lock') }}
+          restore-keys: |
+            quality-review-bundle-ruby-3.4.5-${{ runner.os }}-
+
+      - name: Install gem dependencies
+        run: |
+          gem install bundler -v 4.0.10 --no-document
+          bundle _4.0.10_ install --jobs 4 --retry 3
+
+      - name: Show files compared with main
+        run: git diff --name-only --diff-filter=ACMRT origin/main...HEAD
+
+      - name: Analyze quality review
+        id: analyze
+        run: |
+          review_id="$(bundle exec check_quality analyze --checks all --changed)"
+          echo "review_id=${review_id}" >> "${GITHUB_OUTPUT}"
+          echo "Review ID: ${review_id}"
+
+      - name: Render workflow annotations
+        if: steps.review_config.outputs.enabled == 'true'
+        run: bundle exec check_quality render --format github --review-id "${{ steps.analyze.outputs.review_id }}"
+
+      - name: Render PR review JSON
+        if: github.event_name == 'pull_request' && steps.review_config.outputs.enabled == 'true'
+        run: bundle exec check_quality render --format pr_review --review-id "${{ steps.analyze.outputs.review_id }}" > "tmp/quality_checks/${{ steps.analyze.outputs.review_id }}/pr_review.json"
+
+      - name: Publish PR review
+        if: github.event_name == 'pull_request' && steps.review_config.outputs.enabled == 'true'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: bundle exec check_quality publish-pr-review --review-id "${{ steps.analyze.outputs.review_id }}"

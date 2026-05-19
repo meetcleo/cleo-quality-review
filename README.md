@@ -15,13 +15,28 @@ CLEO_QUALITY_REVIEW_OPEN_AI_KEY=sk-... bundle exec check_quality --format human 
 
 `--files` accepts files or directories. Directories are expanded recursively, then filtered by the active config. When `--files` is omitted, `check_quality` targets changed files from `origin/main...HEAD` that match the active config.
 
+CI can split analysis from output rendering so the Ruby quality tools run once and multiple outputs reuse the same artifacts:
+
+```bash
+review_id="$(bundle exec check_quality analyze --checks all --changed)"
+bundle exec check_quality render --format github --review-id "${review_id}"
+bundle exec check_quality render --format pr_review --review-id "${review_id}" > "tmp/quality_checks/${review_id}/pr_review.json"
+GITHUB_TOKEN=... bundle exec check_quality publish-pr-review --review-id "${review_id}"
+```
+
+`analyze` prints the deterministic review ID for the captured diff. The artifact directory is `tmp/quality_checks/<review_id>/`, and later commands reuse it when `complete.json` is present.
+
 ## Checks
 
-The gem embeds Ruby check adapters for Reek, Flog, and Fasterer. Each run writes raw tool artifacts to `tmp/quality_checks/<epoch>/<check>/raw_output.*` and also normalizes findings for machine-readable output.
+The gem embeds Ruby check adapters for Reek, Flog, and Fasterer. Each run writes raw tool artifacts to `tmp/quality_checks/<review_id>/<check>/raw_output.*` and also normalizes findings for machine-readable output.
 
-`agent` output prints one JSON document containing run metadata, the git diff, all raw tool outputs, format instructions, and normalized findings.
+`agent` output uses the agent prompt to condense run metadata, the git diff, raw tool outputs, and normalized findings into JSON for coding agents.
 
-`github` output prints GitHub workflow annotation commands for normalized findings, followed by a notice summarizing the top actionable issues when findings are present. Configure the summary count with `CLEO_QUALITY_REVIEW_GITHUB_SUMMARY_LIMIT`.
+`github` output uses the GitHub prompt to condense the full report into GitHub workflow annotations for the most relevant findings.
+
+`pr_review` output uses the PR review prompt to condense the full report into JSON for GitHub pull request reviews.
+
+`publish-pr-review` posts that rendered PR review JSON. Comments that map to commentable right-side diff lines become inline review comments; comments that do not map cleanly are omitted.
 
 ## Prompts
 
@@ -30,6 +45,7 @@ Prompts are format-specific:
 - `human`
 - `agent`
 - `github`
+- `pr_review`
 
 Local overrides are loaded first from `.cleo_quality_review/prompts/<format>.md`, then `.cleo_quality_review/<format>.md`. For backwards compatibility, `human` also supports `.cleo_quality_review/prompt.md`. If no local prompt exists, the gem uses `vendor/cleo_quality_review/prompts/<format>.md`.
 
@@ -55,11 +71,12 @@ AllTools:
 
 ## LLM Configuration
 
-Human output uses OpenAI's Responses API.
+All output formats use OpenAI's Responses API.
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `CLEO_QUALITY_REVIEW_OPEN_AI_KEY` | Yes (for `--format human`) | OpenAI API key |
+| `CLEO_QUALITY_REVIEW_OPEN_AI_KEY` | Yes | OpenAI API key |
+| `CLEO_QUALITY_REVIEW_TIMEOUT_SECONDS` | No | OpenAI request timeout in seconds (default: 180) |
 
 The model is currently fixed to `gpt-5.5`.
 
@@ -69,42 +86,41 @@ The model is currently fixed to `gpt-5.5`.
 
 ```mermaid
 %%{init: {"themeVariables": {"fontSize": "32px"}}}%%
-flowchart TD
+flowchart LR
     Executable["exe/check_quality"]:::accent --> CLI["CLI"]:::accent
-    CLI --> Options["Options<br/>format, checks, files, filters"]:::rounded
-    Options --> Runner["Runner<br/>orchestrates one review run"]:::accent
+    CLI --> Options["Options"]:::rounded
+    CLI --> Runner["Runner"]:::accent
+    CLI --> Formatter["Formatter"]:::accent
+    Options --> Runner
 
-    Runner --> TargetResolver["TargetResolver<br/>explicit paths or changed files"]:::rounded
-    Configuration["Configuration<br/>default.yml + local YAML"]:::neutral --> TargetResolver
-    Git["Git<br/>origin/main diff + untracked files"]:::info --> TargetResolver
-    TargetResolver --> Targets["Target files<br/>filtered Ruby files"]:::rounded
+    Runner --> TargetResolver["TargetResolver"]:::rounded
+    TargetResolver --> Configuration["Configuration"]:::neutral
+    TargetResolver --> Git["Git"]:::info
+    Runner --> RunArtifacts["RunArtifacts"]:::neutral
+    RunArtifacts --> Git
 
-    Runner --> CheckRegistry["CheckRegistry<br/>reek, flog, fasterer"]:::rounded
-    CheckRegistry --> Checks["QualityCheck adapters<br/>commands + parsers"]:::rounded
-    Targets --> Checks
-    Checks --> CommandRunner["CommandRunner<br/>Open3.capture3"]:::rounded
-    CommandRunner --> Tools["External tools<br/>Reek, Flog, Fasterer"]:::info
-    Tools --> CheckOutput["CheckOutput + Result<br/>raw output + findings"]:::rounded
+    Runner --> CheckRegistry["CheckRegistry"]:::rounded
+    CheckRegistry --> QualityCheck["QualityCheck"]:::rounded
+    Runner --> QualityCheck
+    QualityCheck --> CommandRunner["CommandRunner"]:::rounded
+    CommandRunner --> Tools["Reek / Flog / Fasterer"]:::info
 
-    Runner --> RunArtifacts["RunArtifacts<br/>tmp/quality_checks/&lt;timestamp&gt;"]:::neutral
-    Git --> RunArtifacts
-    Targets --> RunArtifacts
-    CheckOutput --> RunArtifacts
-    RunArtifacts --> Run["Run<br/>metadata, targets, artifacts, findings"]:::rounded
-    CheckOutput --> Run
+    RunArtifacts --> Run["Run"]:::rounded
+    Runner --> Run
 
-    Run --> Formatter["Formatter<br/>dispatches by format"]:::accent
-    PromptLoader["PromptLoader<br/>local overrides + bundled prompts"]:::neutral --> AgentFormatter["Agent formatter<br/>JSON document"]:::positive
-    PromptLoader --> GithubFormatter["GitHub formatter<br/>workflow annotations"]:::positive
-    PromptLoader --> HumanFormatter["Human formatter<br/>LLM review"]:::positive
-    Formatter --> AgentFormatter
-    Formatter --> GithubFormatter
-    Formatter --> HumanFormatter
+    Formatter --> Run
+    Formatter --> Agent["Agent"]:::positive
+    Formatter --> GitHub["GitHub"]:::positive
+    Formatter --> Human["Human"]:::positive
 
-    Run --> PromptBuilder["PromptBuilder<br/>metadata, diff, raw outputs, file contents"]:::rounded
-    RunArtifacts --> PromptBuilder
-    PromptBuilder --> HumanFormatter
-    HumanFormatter --> LlmClient["LlmClient / OpenAiClient<br/>Responses API"]:::info
+    Agent --> PromptLoader["PromptLoader"]:::neutral
+    GitHub --> PromptLoader
+    Human --> PromptLoader
+    Human --> PromptBuilder["PromptBuilder"]:::rounded
+    PromptBuilder --> Run
+    PromptBuilder --> RunArtifacts
+    Human --> LlmClient["LlmClient"]:::info
+    LlmClient --> OpenAI["OpenAI"]:::info
 
     classDef rounded fill:#F8F6F2,stroke:#AC9B98,stroke-width:2px,color:#47201C,rx:10,ry:10
     classDef positive fill:#E6F2C9,stroke:#51623A,stroke-width:2px,color:#28371A,rx:10,ry:10
@@ -113,4 +129,4 @@ flowchart TD
     classDef neutral fill:#DAF0E5,stroke:#46635E,stroke-width:2px,color:#1D3733,rx:10,ry:10
 ```
 
-The non-human formats are deterministic: `agent` serializes the `Run` plus prompt instructions as JSON, and `github` turns normalized findings into GitHub Actions annotations. The `human` formatter builds a prompt from the same run data and artifacts, then sends it through the configured LLM provider.
+All formats build a prompt from the run data and artifacts, then send it through the configured LLM provider. The selected format determines which prompt is loaded and therefore the output shape.

@@ -42,6 +42,12 @@ module CleoQualityReview
       assert_includes error.message, "invalid argument"
     end
 
+    def test_accepts_pr_review_format
+      options = Options.parse(["--format", "pr_review"])
+
+      assert_equal "pr_review", options.format
+    end
+
     def test_parses_only_as_alias_for_checks
       options = Options.parse(["--only", "reek,flog"])
 
@@ -94,6 +100,18 @@ module CleoQualityReview
       options = Options.parse(["--log"])
 
       assert_predicate options, :log
+    end
+
+    def test_parses_review_id
+      options = Options.parse(["--review-id", "abc123"])
+
+      assert_equal "abc123", options.review_id
+    end
+
+    def test_parses_review_file
+      options = Options.parse(["--review-file", "tmp/review.json"])
+
+      assert_equal "tmp/review.json", options.review_file
     end
 
     def test_log_defaults_to_false

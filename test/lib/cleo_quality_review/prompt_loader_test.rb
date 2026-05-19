@@ -23,20 +23,11 @@ module CleoQualityReview
       end
     end
 
-    def test_supports_legacy_human_prompt_override
-      in_tmpdir do
-        FileUtils.mkdir_p(".cleo_quality_review")
-        File.write(".cleo_quality_review/prompt.md", "legacy human prompt")
-
-        assert_equal "legacy human prompt", PromptLoader.load(format: "human")
-      end
-    end
-
     def test_uses_format_prompt_when_no_override_exists
       in_tmpdir do
         assert_includes PromptLoader.load(format: "human"), "You are reviewing a local code change"
-        assert_includes PromptLoader.load(format: "agent"), "coding agent"
-        assert_includes PromptLoader.load(format: "github"), "top actionable issues"
+        assert_includes PromptLoader.load(format: "agent"), "AI coding assistants"
+        assert_includes PromptLoader.load(format: "github"), "GitHub Actions automation pipeline"
       end
     end
   end

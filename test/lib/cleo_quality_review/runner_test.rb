@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require_relative "../../test_helper"
+require "digest"
+require "json"
 require "cleo_quality_review/checks/quality_check"
 require "cleo_quality_review/options"
 require "cleo_quality_review/runner"
@@ -58,6 +60,40 @@ module CleoQualityReview
       end
     end
 
+    OtherFakeCheck = Class.new(Checks::QualityCheck) do
+      self.check_name = "other"
+      self.tool = "other"
+
+      private
+
+      def command(files)
+        ["other", *files]
+      end
+
+      def parse(_stdout, _stderr)
+        [
+          result(
+            check: "Other",
+            message: "other result",
+            filepath: "app/example.rb",
+            line: 1,
+          ),
+        ]
+      end
+    end
+
+    SelectableCheckRegistry = Struct.new(:received_checks, keyword_init: true) do
+      CHECKS = {
+        "fake" => FakeCheck,
+        "other" => OtherFakeCheck,
+      }.freeze
+
+      def resolve(checks)
+        self.received_checks = checks
+        checks.map { |check| CHECKS.fetch(check) }
+      end
+    end
+
     def test_runs_checks_and_writes_artifacts
       in_tmpdir do
         FileUtils.mkdir_p("app")
@@ -74,14 +110,7 @@ module CleoQualityReview
 
         run = runner.run
 
-        assert_equal 123000, run.timestamp
-        assert_equal ["app/example.rb"], run.target_files
-        assert_equal ["fake"], run.checks
-        assert_equal ["fake"], check_registry.received_checks
-        assert_equal "fake result", run.results.first.result
-        assert_equal "diff --git a/app/example.rb b/app/example.rb\n", File.read("tmp/quality_checks/123000/changes.diff")
-        assert_equal "", File.read("tmp/quality_checks/123000/fake/raw_output.txt")
-        assert_equal "", run.artifacts.raw_check_outputs.fetch("fake")
+        assert_completed_run(run, check_registry)
       end
     end
 
@@ -174,6 +203,93 @@ module CleoQualityReview
 
         assert_equal [], run.target_files
       end
+    end
+
+    def test_reuses_completed_artifacts_for_same_diff
+      in_tmpdir do
+        FileUtils.mkdir_p("app")
+        File.write("app/example.rb", "# frozen_string_literal: true\n")
+
+        command_runner = FakeCommandRunner.new(calls: [])
+        options = Options::ParseResult.new(format: "agent", checks: ["fake"], files: [], exclude: [], changed: false)
+
+        2.times do
+          Runner.new(
+            options: options,
+            command_runner: command_runner,
+            clock: FakeClock.new(now: Time.at(123)),
+            check_registry: FakeCheckRegistry.new,
+          ).run
+        end
+
+        fake_tool_calls = command_runner.calls.select { |command| command == ["fake", "app/example.rb"] }
+        assert_equal 1, fake_tool_calls.length
+      end
+    end
+
+    def test_cache_key_includes_selected_checks
+      in_tmpdir do
+        FileUtils.mkdir_p("app")
+        File.write("app/example.rb", "# frozen_string_literal: true\n")
+
+        command_runner = FakeCommandRunner.new(calls: [])
+        fake_run = runner_for(checks: ["fake"], command_runner: command_runner, check_registry: SelectableCheckRegistry.new).run
+        other_run = runner_for(checks: ["other"], command_runner: command_runner, check_registry: SelectableCheckRegistry.new).run
+
+        assert_distinct_review_ids(fake_run, other_run)
+        assert_tool_called_once(command_runner, "fake")
+        assert_tool_called_once(command_runner, "other")
+      end
+    end
+
+    private
+
+    def assert_completed_run(run, check_registry)
+      review_id = expected_review_id
+
+      assert_equal 123000, run.timestamp
+      assert_equal ["app/example.rb"], run.target_files
+      assert_equal ["fake"], run.checks
+      assert_equal ["fake"], check_registry.received_checks
+      assert_equal "fake result", run.results.first.result
+      assert_equal review_id, run.review_id
+      assert_artifacts_written(review_id)
+      assert_equal "", run.artifacts.raw_check_outputs.fetch("fake")
+    end
+
+    def assert_distinct_review_ids(fake_run, other_run)
+      assert_equal expected_review_id(checks: ["fake"]), fake_run.review_id
+      assert_equal expected_review_id(checks: ["other"]), other_run.review_id
+      refute_equal fake_run.review_id, other_run.review_id
+    end
+
+    def assert_tool_called_once(command_runner, tool)
+      assert_equal 1, command_runner.calls.count { |command| command == [tool, "app/example.rb"] }
+    end
+
+    def runner_for(checks:, command_runner:, check_registry:)
+      Runner.new(
+        options: Options::ParseResult.new(format: "agent", checks: checks, files: [], exclude: [], changed: false),
+        command_runner: command_runner,
+        clock: FakeClock.new(now: Time.at(123)),
+        check_registry: check_registry,
+      )
+    end
+
+    def assert_artifacts_written(review_id)
+      assert_equal diff_content, File.read("tmp/quality_checks/#{review_id}/changes.diff")
+      assert_equal "", File.read("tmp/quality_checks/#{review_id}/fake/raw_output.txt")
+      assert_path_exists "tmp/quality_checks/#{review_id}/complete.json"
+      assert_path_exists "tmp/quality_checks/#{review_id}/manifest.json"
+      assert_path_exists "tmp/quality_checks/#{review_id}/results.json"
+    end
+
+    def expected_review_id(checks: ["fake"], diff: diff_content)
+      Digest::SHA256.hexdigest(JSON.generate(diff: diff, checks: checks.sort))
+    end
+
+    def diff_content
+      "diff --git a/app/example.rb b/app/example.rb\n"
     end
   end
 end

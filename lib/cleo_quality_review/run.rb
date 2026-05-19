@@ -6,6 +6,8 @@ module CleoQualityReview
   #
   # @!attribute [r] timestamp
   #   @return [Integer] epoch milliseconds when the run started
+  # @!attribute [r] review_id
+  #   @return [String] deterministic identifier for the reviewed diff
   # @!attribute [r] format
   #   @return [String] output format (human, agent, github)
   # @!attribute [r] checks
@@ -22,6 +24,7 @@ module CleoQualityReview
   #   @return [RunArtifacts, nil] artifacts associated with this run
   Run = Struct.new(
     :timestamp,
+    :review_id,
     :format,
     :checks,
     :target_files,
@@ -38,6 +41,7 @@ module CleoQualityReview
     def to_h
       {
         timestamp: timestamp,
+        review_id: review_id,
         format: format,
         checks: checks,
         target_files: target_files,

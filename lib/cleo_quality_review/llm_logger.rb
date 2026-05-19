@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require "fileutils"
+require "logger"
 
 module CleoQualityReview
   ##
@@ -14,6 +15,7 @@ module CleoQualityReview
     def initialize(provider_name:, enabled: false)
       @provider_name = provider_name
       @enabled = enabled
+      @logger = nil
     end
 
     ##
@@ -24,10 +26,7 @@ module CleoQualityReview
     def log(query:, response:)
       return unless enabled
 
-      ensure_log_directory
-      File.open(log_path, "a") do |file|
-        file.puts(format_entry(query: query, response: response))
-      end
+      logger.info(format_entry(query: query, response: response))
     end
 
     ##
@@ -40,8 +39,13 @@ module CleoQualityReview
 
     attr_reader :provider_name, :enabled
 
-    def ensure_log_directory
+    def logger
+      @logger ||= build_logger
+    end
+
+    def build_logger
       FileUtils.mkdir_p(LOG_DIR)
+      Logger.new(log_path, formatter: proc { |_, _, _, message| "#{message}\n" })
     end
 
     def format_entry(query:, response:)
@@ -56,7 +60,6 @@ module CleoQualityReview
 
         --- RESPONSE ---
         #{response}
-
       ENTRY
     end
   end
