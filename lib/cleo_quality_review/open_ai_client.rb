@@ -69,6 +69,7 @@ module CleoQualityReview
     # @return [String] generated review text
     # @raise [OpenAiApiError] if the API request fails
     def generate_review(prompt)
+      timeout_seconds = config.timeout_seconds
       response = http_transport.post_json(
         uri: RESPONSES_API_URL,
         headers: headers,
@@ -76,7 +77,7 @@ module CleoQualityReview
           model: config.model,
           input: prompt,
         },
-        timeout_seconds: config.timeout_seconds,
+        timeout_seconds: timeout_seconds,
       )
       raise OpenAiApiError, api_error_message(response) unless response.success?
 
@@ -85,7 +86,7 @@ module CleoQualityReview
       raise OpenAiApiError, "OpenAI Responses API returned invalid JSON: #{e.message}"
     rescue Net::OpenTimeout, Net::ReadTimeout, Net::WriteTimeout => e
       raise OpenAiApiError,
-        "OpenAI Responses API request timed out after #{config.timeout_seconds} seconds: #{e.class}: #{e.message}"
+        "OpenAI Responses API request timed out after #{timeout_seconds} seconds: #{e.class}: #{e.message}"
     end
 
     private

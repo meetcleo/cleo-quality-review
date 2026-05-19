@@ -76,47 +76,66 @@ module CleoQualityReview
     def parser
       OptionParser.new do |opts|
         opts.banner = "Usage: check_quality [options] [files...]"
+        register_options(opts)
+      end
+    end
 
-        opts.on("-f", "--format FORMAT", FORMATS, "Output format: #{FORMATS.join(', ')} (default: human)") do |value|
-          @format = value
-        end
+    def register_options(opts)
+      register_format_option(opts)
+      register_check_options(opts)
+      register_target_options(opts)
+      register_output_options(opts)
+      register_help_option(opts)
+    end
 
-        opts.on("-c", "--checks CHECKS", Array, "Checks to run: all, reek, flog, fasterer") do |values|
-          checks.concat(values)
-        end
+    def register_format_option(opts)
+      opts.on("-f", "--format FORMAT", FORMATS, "Output format: #{FORMATS.join(', ')} (default: human)") do |value|
+        @format = value
+      end
+    end
 
-        opts.on("--only CHECKS", Array, "Alias for --checks") do |values|
-          checks.concat(values)
-        end
+    def register_check_options(opts)
+      opts.on("-c", "--checks CHECKS", Array, "Checks to run: all, reek, flog, fasterer") do |values|
+        checks.concat(values)
+      end
 
-        opts.on("-x", "--exclude CHECKS", Array, "Checks to exclude") do |values|
-          exclude.concat(values)
-        end
+      opts.on("--only CHECKS", Array, "Alias for --checks") do |values|
+        checks.concat(values)
+      end
 
-        opts.on("--files PATHS", Array, "Comma-separated files or directories to check") do |values|
-          files.concat(values)
-        end
+      opts.on("-x", "--exclude CHECKS", Array, "Checks to exclude") do |values|
+        exclude.concat(values)
+      end
+    end
 
-        opts.on("--changed", "Only check files changed from main branch") do
-          @changed = true
-        end
+    def register_target_options(opts)
+      opts.on("--files PATHS", Array, "Comma-separated files or directories to check") do |values|
+        files.concat(values)
+      end
 
-        opts.on("--log", "Log LLM queries and responses to log/[provider].log") do
-          @log = true
-        end
+      opts.on("--changed", "Only check files changed from main branch") do
+        @changed = true
+      end
+    end
 
-        opts.on("--review-id REVIEW_ID", "Reuse an existing analysis artifact by review ID") do |value|
-          @review_id = value
-        end
+    def register_output_options(opts)
+      opts.on("--log", "Log LLM queries and responses to log/[provider].log") do
+        @log = true
+      end
 
-        opts.on("--review-file PATH", "Rendered pr_review JSON to publish") do |value|
-          @review_file = value
-        end
+      opts.on("--review-id REVIEW_ID", "Reuse an existing analysis artifact by review ID") do |value|
+        @review_id = value
+      end
 
-        opts.on("-h", "--help", "Print help") do
-          puts opts
-          exit 0
-        end
+      opts.on("--review-file PATH", "Rendered pr_review JSON to publish") do |value|
+        @review_file = value
+      end
+    end
+
+    def register_help_option(opts)
+      opts.on("-h", "--help", "Print help") do
+        puts opts
+        exit 0
       end
     end
 

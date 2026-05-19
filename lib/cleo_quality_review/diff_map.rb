@@ -46,10 +46,7 @@ module CleoQualityReview
 
     def parse_hunk_line(line, current_path, new_line)
       case line[0]
-      when "+"
-        commentable_lines[current_path] << new_line
-        new_line + 1
-      when " "
+      when "+", " "
         commentable_lines[current_path] << new_line
         new_line + 1
       when "-"

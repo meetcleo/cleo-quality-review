@@ -93,26 +93,38 @@ module CleoQualityReview
     end
 
     def request_json(method, uri, body = nil)
-      request = case method
-      when :get
-        Net::HTTP::Get.new(uri)
-      when :post
-        Net::HTTP::Post.new(uri)
-      else
-        raise ArgumentError, "Unsupported HTTP method #{method.inspect}"
-      end
+      wrap_response(perform_request(uri, build_request(method, uri, body)))
+    end
 
+    def build_request(method, uri, body)
+      request = request_class(method).new(uri)
+      apply_headers(request)
+      request.body = JSON.generate(body) if body
+      request
+    end
+
+    def request_class(method)
+      {
+        get: Net::HTTP::Get,
+        post: Net::HTTP::Post,
+      }.fetch(method) { raise ArgumentError, "Unsupported HTTP method #{method.inspect}" }
+    end
+
+    def apply_headers(request)
       request["Accept"] = "application/vnd.github+json"
       request["Authorization"] = "Bearer #{token}"
       request["Content-Type"] = "application/json"
       request["User-Agent"] = "cleo-quality-review"
       request["X-GitHub-Api-Version"] = API_VERSION
-      request.body = JSON.generate(body) if body
+    end
 
-      response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |http|
+    def perform_request(uri, request)
+      Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |http|
         http.request(request)
       end
+    end
 
+    def wrap_response(response)
       GitHubResponse.new(status_code: response.code.to_i, body: response.body.to_s)
     end
   end

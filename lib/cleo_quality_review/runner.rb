@@ -28,44 +28,24 @@ module CleoQualityReview
     # @return [Run] results of the quality review
     def run
       timestamp = epoch_milliseconds
-      changed = options.changed || options.files.empty?
-      target = TargetResolver.new(command_runner: command_runner).resolve(options.files, changed: changed)
-      changes = ChangesDiff.new(target_files: target.files, command_runner: command_runner)
-      artifacts = RunArtifacts.new(
-        timestamp: timestamp,
-        review_id: changes.review_id,
-        target_files: target.files,
-        changes_diff: changes.to_s,
-      ).prepare!
-      return artifacts.to_run(format: options.format, log: options.log) if artifacts.complete?
+      target = resolve_target
+      changes = changes_diff(target)
+      artifacts = prepare_artifacts(timestamp: timestamp, target: target, changes: changes)
+      return reusable_run(artifacts) if artifacts.complete?
 
       check_classes = resolve_checks
       check_outputs = run_checks(check_classes, target.ruby_files, timestamp)
+      write_check_outputs(artifacts, check_outputs)
 
-      check_outputs.each do |output|
-        artifacts.write_check_output(
-          check_name: output.check_name,
-          extension: output.extension,
-          output: output.raw_output,
-        )
-      end
-
-      run = Run.new(
+      run = build_run(
         timestamp: timestamp,
-        review_id: changes.review_id,
-        format: options.format,
-        checks: check_classes.map(&:check_name),
-        target_files: target.files,
-        ruby_files: target.ruby_files,
-        run_directory: artifacts.to_s,
-        results: check_outputs.flat_map(&:results),
+        target: target,
+        changes: changes,
         artifacts: artifacts,
-        log: options.log,
+        check_classes: check_classes,
+        check_outputs: check_outputs,
       )
-
-      artifacts.write_results(run.results)
-      artifacts.write_manifest(run)
-      artifacts.mark_complete!
+      persist_run(artifacts, run)
       run
     end
 
@@ -75,6 +55,28 @@ module CleoQualityReview
 
     def epoch_milliseconds
       (clock.now.to_r * 1_000).to_i
+    end
+
+    def resolve_target
+      changed = options.changed || options.files.empty?
+      TargetResolver.new(command_runner: command_runner).resolve(options.files, changed: changed)
+    end
+
+    def changes_diff(target)
+      ChangesDiff.new(target_files: target.files, command_runner: command_runner)
+    end
+
+    def prepare_artifacts(timestamp:, target:, changes:)
+      RunArtifacts.new(
+        timestamp: timestamp,
+        review_id: changes.review_id,
+        target_files: target.files,
+        changes_diff: changes.to_s,
+      ).prepare!
+    end
+
+    def reusable_run(artifacts)
+      artifacts.to_run(format: options.format, log: options.log)
     end
 
     def resolve_checks
@@ -89,6 +91,37 @@ module CleoQualityReview
       check_classes.map do |check_class|
         check_class.new(command_runner: command_runner, timestamp: timestamp).run(ruby_files)
       end
+    end
+
+    def write_check_outputs(artifacts, check_outputs)
+      check_outputs.each do |output|
+        artifacts.write_check_output(
+          check_name: output.check_name,
+          extension: output.extension,
+          output: output.raw_output,
+        )
+      end
+    end
+
+    def build_run(timestamp:, target:, changes:, artifacts:, check_classes:, check_outputs:)
+      Run.new(
+        timestamp: timestamp,
+        review_id: changes.review_id,
+        format: options.format,
+        checks: check_classes.map(&:check_name),
+        target_files: target.files,
+        ruby_files: target.ruby_files,
+        run_directory: artifacts.to_s,
+        results: check_outputs.flat_map(&:results),
+        artifacts: artifacts,
+        log: options.log,
+      )
+    end
+
+    def persist_run(artifacts, run)
+      artifacts.write_results(run.results)
+      artifacts.write_manifest(run)
+      artifacts.mark_complete!
     end
   end
 end

@@ -43,12 +43,6 @@ module CleoQualityReview
       @logger ||= build_logger
     end
 
-    def bad_method
-      a = [{}]
-      a.map { |h| h.map.with_index { |v, i| h[v][i] } }
-      return a
-    end
-
     def build_logger
       FileUtils.mkdir_p(LOG_DIR)
       Logger.new(log_path, formatter: proc { |_, _, _, message| "#{message}\n" })

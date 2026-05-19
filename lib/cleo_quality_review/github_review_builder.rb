@@ -53,19 +53,34 @@ module CleoQualityReview
 
     def inline_comments
       rendered_comments.first(MAX_INLINE_COMMENTS).filter_map do |comment|
-        path = comment["path"].to_s
-        line = comment["line"].to_i
-        body = comment["body"].to_s.strip
-        next if path.empty? || line <= 0 || body.empty?
-        next unless diff_map.commentable?(path, line)
-
-        {
-          path: path,
-          line: line,
-          side: "RIGHT",
-          body: truncate(body),
-        }
+        inline_comment_payload(normalized_comment(comment))
       end
+    end
+
+    def normalized_comment(comment)
+      {
+        path: comment["path"].to_s,
+        line: comment["line"].to_i,
+        body: comment["body"].to_s.strip,
+      }
+    end
+
+    def inline_comment_payload(comment)
+      return unless commentable?(comment)
+
+      {
+        path: comment.fetch(:path),
+        line: comment.fetch(:line),
+        side: "RIGHT",
+        body: truncate(comment.fetch(:body)),
+      }
+    end
+
+    def commentable?(comment)
+      comment.fetch(:path) != "" &&
+        comment.fetch(:line).positive? &&
+        comment.fetch(:body) != "" &&
+        diff_map.commentable?(comment.fetch(:path), comment.fetch(:line))
     end
 
     def rendered_comments
