@@ -27,14 +27,15 @@ module CleoQualityReview
     # Publish the review, or skip when there is no PR context/findings
     # @return [String] status message
     def publish
+      review_id = run.review_id
       return "No PR review comments to publish." if builder.empty?
       return "No pull_request event found; skipping PR review publication." unless pull_request_context?
-      return "PR review already published for review ID #{run.review_id}; skipping." if already_published?
+      return "PR review already published for review ID #{review_id}; skipping." if already_published?
 
       response = request_json(:post, reviews_uri, builder.payload(commit_id: head_sha))
       raise Error, "GitHub PR review publication failed with status #{response.status_code}: #{response.body}" unless response.success?
 
-      "Published PR review for review ID #{run.review_id}."
+      "Published PR review for review ID #{review_id}."
     end
 
     private
@@ -49,9 +50,10 @@ module CleoQualityReview
 
     def already_published?
       response = request_json(:get, reviews_uri)
-      raise Error, "GitHub PR review lookup failed with status #{response.status_code}: #{response.body}" unless response.success?
+      body = response.body
+      raise Error, "GitHub PR review lookup failed with status #{response.status_code}: #{body}" unless response.success?
 
-      JSON.parse(response.body).any? do |review|
+      JSON.parse(body).any? do |review|
         review.fetch("body", "").include?(builder.marker)
       end
     end
@@ -111,11 +113,17 @@ module CleoQualityReview
     end
 
     def apply_headers(request)
-      request["Accept"] = "application/vnd.github+json"
-      request["Authorization"] = "Bearer #{token}"
-      request["Content-Type"] = "application/json"
-      request["User-Agent"] = "cleo-quality-review"
-      request["X-GitHub-Api-Version"] = API_VERSION
+      github_headers.each { |key, value| request[key] = value }
+    end
+
+    def github_headers
+      {
+        "Accept" => "application/vnd.github+json",
+        "Authorization" => "Bearer #{token}",
+        "Content-Type" => "application/json",
+        "User-Agent" => "cleo-quality-review",
+        "X-GitHub-Api-Version" => API_VERSION,
+      }
     end
 
     def perform_request(uri, request)

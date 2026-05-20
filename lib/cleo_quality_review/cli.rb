@@ -89,9 +89,10 @@ module CleoQualityReview
     end
 
     def load_run(options)
-      raise OptionParser::MissingArgument, "--review-id is required" if options.review_id.to_s.strip == ""
+      review_id = options.review_id
+      raise OptionParser::MissingArgument, "--review-id is required" if review_id.to_s.strip == ""
 
-      RunArtifacts.load(review_id: options.review_id).to_run(format: options.format, log: options.log)
+      RunArtifacts.load(review_id: review_id).to_run(format: options.format, log: options.log)
     end
 
     def rendered_pr_review(options, run)

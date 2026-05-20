@@ -33,12 +33,7 @@ module CleoQualityReview
         match = strip_ansi(line).match(/^(?<filepath>.+?):(?<line>\d+):?\s+(?<message>.+)$/)
         return unless match
 
-        result(
-          check: "Performance",
-          message: match[:message],
-          filepath: match[:filepath],
-          line: match[:line],
-        )
+        result(check: "Performance", message: match[:message], filepath: match[:filepath], line: match[:line])
       end
 
       def strip_ansi(value)

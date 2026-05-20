@@ -47,10 +47,11 @@ module CleoQualityReview
 
     def untracked_target_files
       command = ["git", "ls-files", "--others", "--exclude-standard"]
-      command.concat(["--", *target_files]) unless target_files.empty?
+      empty_targets = target_files.empty?
+      command.concat(["--", *target_files]) unless empty_targets
 
       command_runner.run(*command).stdout.lines.map(&:strip).select do |path|
-        target_files.empty? || target_files.include?(path)
+        empty_targets || target_files.include?(path)
       end
     end
 

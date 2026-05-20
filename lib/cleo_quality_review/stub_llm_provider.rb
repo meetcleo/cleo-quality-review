@@ -65,12 +65,13 @@ module CleoQualityReview
     # @return [String] the configured response
     def generate_review(prompt)
       received_prompts << prompt
+      response = config.response
 
-      case config.response
+      case response
       when Proc
-        config.response.call(prompt)
+        response.call(prompt)
       else
-        config.response.to_s
+        response.to_s
       end
     end
 

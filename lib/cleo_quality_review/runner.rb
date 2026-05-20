@@ -38,12 +38,7 @@ module CleoQualityReview
       artifacts = prepare_artifacts(context)
       return reusable_run(artifacts) if artifacts.complete?
 
-      check_outputs = run_checks(context.check_classes, context.target.ruby_files, context.timestamp)
-      write_check_outputs(artifacts, check_outputs)
-
-      run = build_run(context, artifacts, check_outputs)
-      persist_run(artifacts, run)
-      run
+      execute_fresh_run(context, artifacts)
     end
 
     private
@@ -70,8 +65,9 @@ module CleoQualityReview
     end
 
     def resolve_target
-      changed = options.changed || options.files.empty?
-      TargetResolver.new(command_runner: command_runner).resolve(options.files, changed: changed)
+      files = options.files
+      changed = options.changed || files.empty?
+      TargetResolver.new(command_runner: command_runner).resolve(files, changed: changed)
     end
 
     def changes_diff(target)
@@ -91,12 +87,24 @@ module CleoQualityReview
       artifacts.to_run(format: options.format, log: options.log)
     end
 
+    def execute_fresh_run(context, artifacts)
+      check_outputs = run_checks(context.check_classes, context.target.ruby_files, context.timestamp)
+      write_check_outputs(artifacts, check_outputs)
+      run = build_run(context, artifacts, check_outputs)
+      persist_run(artifacts, run)
+      run
+    end
+
     def resolve_checks
       all_checks = check_registry.resolve(options.checks)
-      return all_checks if options.exclude.empty?
+      filter_excluded_checks(all_checks, options.exclude)
+    end
 
-      excluded_names = options.exclude.map(&:downcase)
-      all_checks.reject { |check_class| excluded_names.include?(check_class.check_name.downcase) }
+    def filter_excluded_checks(checks, excluded)
+      return checks if excluded.empty?
+
+      excluded_names = excluded.map(&:downcase)
+      checks.reject { |check| excluded_names.include?(check.check_name.downcase) }
     end
 
     def run_checks(check_classes, ruby_files, timestamp)
@@ -116,13 +124,14 @@ module CleoQualityReview
     end
 
     def build_run(context, artifacts, check_outputs)
+      target = context.target
       Run.new(
         timestamp: context.timestamp,
         review_id: context.review_id,
         format: options.format,
         checks: context.check_classes.map(&:check_name),
-        target_files: context.target.files,
-        ruby_files: context.target.ruby_files,
+        target_files: target.files,
+        ruby_files: target.ruby_files,
         run_directory: artifacts.to_s,
         results: check_outputs.flat_map(&:results),
         artifacts: artifacts,

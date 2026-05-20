@@ -46,10 +46,9 @@ module CleoQualityReview
     def resolve_target_files(files, changed:)
       candidates = if files.empty?
         changed_files
-      elsif changed
-        filter_to_changed(expand_target_paths(files))
       else
-        expand_target_paths(files)
+        expanded_paths = expand_target_paths(files)
+        changed ? filter_to_changed(expanded_paths) : expanded_paths
       end
 
       candidates.select do |path|
@@ -95,16 +94,21 @@ module CleoQualityReview
 
     def expand_target_paths(paths)
       cleaned_paths = paths.map(&:to_s).map(&:strip).reject(&:empty?)
-      missing_paths = cleaned_paths.reject { |path| File.file?(path) || File.directory?(path) }
-      raise ArgumentError, "Path not found: #{missing_paths.join(', ')}" unless missing_paths.empty?
+      files, directories, missing = classify_paths(cleaned_paths)
+      raise ArgumentError, "Path not found: #{missing.join(', ')}" unless missing.empty?
 
-      cleaned_paths.flat_map do |path|
-        if File.directory?(path)
-          directory_files(path)
-        else
-          path
-        end
-      end.uniq
+      (files + directories.flat_map { |path| directory_files(path) }).uniq
+    end
+
+    def classify_paths(paths)
+      paths.group_by { |path| path_type(path) }.values_at(:file, :directory, :missing).map { |v| v || [] }
+    end
+
+    def path_type(path)
+      return :file if File.file?(path)
+      return :directory if File.directory?(path)
+
+      :missing
     end
 
     def directory_files(path)

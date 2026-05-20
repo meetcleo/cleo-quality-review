@@ -95,17 +95,11 @@ module CleoQualityReview
     end
 
     def register_check_options(opts)
-      opts.on("-c", "--checks CHECKS", Array, "Checks to run: all, reek, flog, fasterer") do |values|
-        checks.concat(values)
-      end
+      add_checks = ->(values) { checks.concat(values) }
 
-      opts.on("--only CHECKS", Array, "Alias for --checks") do |values|
-        checks.concat(values)
-      end
-
-      opts.on("-x", "--exclude CHECKS", Array, "Checks to exclude") do |values|
-        exclude.concat(values)
-      end
+      opts.on("-c", "--checks CHECKS", Array, "Checks to run: all, reek, flog, fasterer", &add_checks)
+      opts.on("--only CHECKS", Array, "Alias for --checks", &add_checks)
+      opts.on("-x", "--exclude CHECKS", Array, "Checks to exclude") { |values| exclude.concat(values) }
     end
 
     def register_target_options(opts)

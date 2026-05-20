@@ -34,13 +34,14 @@ module CleoQualityReview
     attr_reader :run, :prompt, :artifacts
 
     def metadata_section
+      target_files = run.target_files
       <<~MARKDOWN
         ## Run metadata
 
         Review ID: #{run.review_id}
         Timestamp: #{run.timestamp}
         Checks: #{run.checks.join(", ")}
-        Target files: #{run.target_files.empty? ? "(none)" : run.target_files.join(", ")}
+        Target files: #{target_files.empty? ? "(none)" : target_files.join(", ")}
       MARKDOWN
     end
 

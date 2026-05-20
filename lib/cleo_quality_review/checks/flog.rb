@@ -33,12 +33,7 @@ module CleoQualityReview
         match = line.match(/^\s*(?<score>\d+(?:\.\d+)?):\s+(?<subject>.+?)\s+(?<filepath>[^:\s]+):(?<line>\d+)/)
         return unless match
 
-        result(
-          check: "Complexity",
-          message: "#{match[:score]}: #{match[:subject]}",
-          filepath: match[:filepath],
-          line: match[:line],
-        )
+        result(check: "Complexity", message: "#{match[:score]}: #{match[:subject]}", filepath: match[:filepath], line: match[:line])
       end
     end
   end
