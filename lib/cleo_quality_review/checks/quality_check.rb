@@ -93,15 +93,19 @@ module CleoQualityReview
         command_result.success? ? "" : command_result.stderr
       end
 
-      def result(check:, message:, filepath:, line: nil)
+      def result(attrs)
+        build_result(attrs)
+      end
+
+      def build_result(attrs)
         _check_name, _extension, tool = check_metadata
         CleoQualityReview::Result.new(
           tool: tool,
-          check: check,
+          check: attrs.fetch(:check),
           timestamp: timestamp,
-          result: message,
-          filepath: filepath,
-          line: line&.to_i,
+          result: attrs.fetch(:message),
+          filepath: attrs.fetch(:filepath),
+          line: attrs[:line]&.to_i,
         )
       end
     end

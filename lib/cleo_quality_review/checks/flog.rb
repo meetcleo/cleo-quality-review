@@ -20,20 +20,14 @@ module CleoQualityReview
         findings = stdout.to_s.lines.filter_map { |line| parse_line(line) }
         return findings unless findings.empty? && stderr.to_s.strip != ""
 
-        [
-          result(
-            check: "Execution error",
-            message: stderr,
-            filepath: nil,
-          ),
-        ]
+        [result({ check: "Execution error", message: stderr, filepath: nil })]
       end
 
       def parse_line(line)
         match = line.match(/^\s*(?<score>\d+(?:\.\d+)?):\s+(?<subject>.+?)\s+(?<filepath>[^:\s]+):(?<line>\d+)/)
         return unless match
 
-        result(check: "Complexity", message: "#{match[:score]}: #{match[:subject]}", filepath: match[:filepath], line: match[:line])
+        result({ check: "Complexity", message: "#{match[:score]}: #{match[:subject]}", filepath: match[:filepath], line: match[:line] })
       end
     end
   end

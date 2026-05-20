@@ -44,16 +44,23 @@ module CleoQualityReview
     attr_reader :command_runner, :configuration
 
     def resolve_target_files(files, changed:)
-      candidates = if files.empty?
-        changed_files
-      else
-        expanded_paths = expand_target_paths(files)
-        changed ? filter_to_changed(expanded_paths) : expanded_paths
-      end
+      candidates = resolve_candidates(files, changed: changed)
+      filter_to_configured(candidates)
+    end
 
-      candidates.select do |path|
-        File.file?(path) && configuration.target_file?(path)
-      end
+    def resolve_candidates(files, changed:)
+      return changed_files if files.empty?
+
+      resolve_explicit_paths(files, changed: changed)
+    end
+
+    def resolve_explicit_paths(files, changed:)
+      expanded = expand_target_paths(files)
+      changed ? filter_to_changed(expanded) : expanded
+    end
+
+    def filter_to_configured(candidates)
+      candidates.select { |path| File.file?(path) && configuration.target_file?(path) }
     end
 
     def filter_to_changed(paths)

@@ -86,20 +86,28 @@ module CleoQualityReview
     # @return [String] generated review text
     # @raise [OpenAiApiError] if the API request fails
     def generate_review(prompt)
-      timeout_seconds = config.timeout_seconds
-      response = http_transport.post_json(build_request(prompt, timeout_seconds))
-      raise OpenAiApiError, api_error_message(response) unless response.success?
-
-      extract_text(JSON.parse(response.body))
-    rescue JSON::ParserError => e
-      raise OpenAiApiError, "OpenAI Responses API returned invalid JSON: #{e.message}"
-    rescue Net::OpenTimeout, Net::ReadTimeout, Net::WriteTimeout => e
-      raise OpenAiApiError, timeout_error_message(timeout_seconds, e)
+      response = execute_request(prompt)
+      parse_response(response)
     end
 
     private
 
     attr_reader :config, :http_transport
+
+    def execute_request(prompt)
+      timeout_seconds = config.timeout_seconds
+      http_transport.post_json(build_request(prompt, timeout_seconds))
+    rescue Net::OpenTimeout, Net::ReadTimeout, Net::WriteTimeout => e
+      raise OpenAiApiError, timeout_error_message(timeout_seconds, e)
+    end
+
+    def parse_response(response)
+      raise OpenAiApiError, api_error_message(response) unless response.success?
+
+      extract_text(JSON.parse(response.body))
+    rescue JSON::ParserError => e
+      raise OpenAiApiError, "OpenAI Responses API returned invalid JSON: #{e.message}"
+    end
 
     def build_request(prompt, timeout_seconds)
       OpenAiHttpRequest.new(
