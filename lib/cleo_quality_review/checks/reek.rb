@@ -27,12 +27,12 @@ module CleoQualityReview
       end
 
       def smell_to_result(smell)
-        result({
+        result(
           check: smell.fetch("smell_type", "Reek"),
           message: smell_message(smell),
           filepath: smell.fetch("source", nil),
           line: Array(smell["lines"]).first,
-        })
+        )
       end
 
       def parse_json(stdout)
@@ -46,7 +46,7 @@ module CleoQualityReview
       end
 
       def stderr_result(stderr)
-        [result({ check: "Execution error", message: stderr, filepath: nil })]
+        [result(check: "Execution error", message: stderr, filepath: nil)]
       end
     end
   end

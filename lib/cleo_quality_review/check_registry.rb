@@ -34,12 +34,20 @@ module CleoQualityReview
     # @raise [ArgumentError] if an unknown check name is provided
     def resolve(names)
       normalized = normalize_names(names)
-      return CHECKS.values if normalized.empty? || normalized.include?("all")
+      return CHECKS.values if all_checks_requested?(normalized)
 
-      normalized.map { |name| fetch_check(name) }.uniq
+      fetch_checks(normalized)
     end
 
     private
+
+    def all_checks_requested?(normalized)
+      normalized.empty? || normalized.include?("all")
+    end
+
+    def fetch_checks(normalized)
+      normalized.map { |name| fetch_check(name) }.uniq
+    end
 
     def normalize_names(names)
       names.flat_map { |name| normalize_list_item(name) }

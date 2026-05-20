@@ -29,6 +29,15 @@ module CleoQualityReview
     # Execute the CLI
     # @return [Integer] exit code (0 for success, 1 for error)
     def run
+      dispatch_command
+    rescue Error, OptionParser::ParseError, ArgumentError => e
+      stderr.puts("check_quality: #{e.message}")
+      1
+    end
+
+    private
+
+    def dispatch_command
       command_runner = CommandRunner.new
       command = argv.first
 
@@ -37,12 +46,7 @@ module CleoQualityReview
       else
         run_one_shot(argv, command_runner)
       end
-    rescue Error, OptionParser::ParseError, ArgumentError => e
-      stderr.puts("check_quality: #{e.message}")
-      1
     end
-
-    private
 
     attr_reader :argv, :stdout, :stderr
 
@@ -89,10 +93,7 @@ module CleoQualityReview
     end
 
     def load_run(options)
-      review_id = options.review_id
-      raise OptionParser::MissingArgument, "--review-id is required" if review_id.to_s.strip == ""
-
-      RunArtifacts.load(review_id: review_id).to_run(format: options.format, log: options.log)
+      RunArtifacts.load(review_id: options.validated_review_id).to_run(**options.run_loading_params)
     end
 
     def rendered_pr_review(options, run)

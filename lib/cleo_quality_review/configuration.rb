@@ -104,10 +104,21 @@ module CleoQualityReview
 
       def load_file(path, seen: Set.new)
         expanded_path = expand_config_path(path, relative_to: root)
-        return {} if seen.include?(expanded_path)
-        raise ArgumentError, "Config file not found: #{expanded_path}" unless File.file?(expanded_path)
+        return {} if skip_file?(expanded_path, seen)
 
         seen.add(expanded_path)
+        load_with_inheritance(expanded_path, seen)
+      end
+
+      def skip_file?(expanded_path, seen)
+        return true if seen.include?(expanded_path)
+
+        raise ArgumentError, "Config file not found: #{expanded_path}" unless File.file?(expanded_path)
+
+        false
+      end
+
+      def load_with_inheritance(expanded_path, seen)
         config = read_yaml(expanded_path)
         inherited_data = load_inherited(config, expanded_path, seen)
         merge(inherited_data, config.except(INHERIT_FROM))
@@ -163,14 +174,19 @@ module CleoQualityReview
       def both_arrays?(a, b) = a.is_a?(Array) && b.is_a?(Array)
 
       def stringify_keys(value)
-        return stringify_hash_keys(value) if value.is_a?(Hash)
-        return value.map { |v| stringify_keys(v) } if value.is_a?(Array)
-
-        value
+        case value
+        when Hash then stringify_hash_keys(value)
+        when Array then stringify_array_values(value)
+        else value
+        end
       end
 
       def stringify_hash_keys(hash)
         hash.to_h { |key, v| [key.to_s, stringify_keys(v)] }
+      end
+
+      def stringify_array_values(array)
+        array.map { |v| stringify_keys(v) }
       end
     end
   end

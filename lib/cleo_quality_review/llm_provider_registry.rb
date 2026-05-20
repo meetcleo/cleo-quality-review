@@ -61,7 +61,7 @@ module CleoQualityReview
     # @raise [MissingLlmConfigurationError] if not configured
     # @return [void]
     def validate_config(config)
-      config.open_ai_config.validate!
+      config.open_ai_config.validate
     end
 
     ##

@@ -16,7 +16,19 @@ module CleoQualityReview
   class Runner
     ##
     # Grouped values resolved at the start of an analysis run
-    AnalysisContext = Struct.new(:timestamp, :target, :changes, :review_id, :check_classes, keyword_init: true)
+    AnalysisContext = Struct.new(:timestamp, :target, :changes, :review_id, :check_classes, keyword_init: true) do
+      ##
+      # @return [Hash] run construction attributes derived from this context
+      def run_attributes
+        {
+          timestamp: timestamp,
+          review_id: review_id,
+          checks: check_classes.map(&:check_name),
+          target_files: target.files,
+          ruby_files: target.ruby_files,
+        }
+      end
+    end
 
     ##
     # @param [Options::ParseResult] options parsed command-line options
@@ -124,14 +136,9 @@ module CleoQualityReview
     end
 
     def build_run(context, artifacts, check_outputs)
-      target = context.target
       Run.new(
-        timestamp: context.timestamp,
-        review_id: context.review_id,
+        **context.run_attributes,
         format: options.format,
-        checks: context.check_classes.map(&:check_name),
-        target_files: target.files,
-        ruby_files: target.ruby_files,
         run_directory: artifacts.to_s,
         results: check_outputs.flat_map(&:results),
         artifacts: artifacts,

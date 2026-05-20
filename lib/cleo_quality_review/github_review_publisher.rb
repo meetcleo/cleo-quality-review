@@ -27,18 +27,29 @@ module CleoQualityReview
     # Publish the review, or skip when there is no PR context/findings
     # @return [String] status message
     def publish
+      skip_reason = publication_skip_reason
+      return skip_reason if skip_reason
+
+      post_review
+    end
+
+    private
+
+    def publication_skip_reason
       review_id = run.review_id
       return "No PR review comments to publish." if builder.empty?
       return "No pull_request event found; skipping PR review publication." unless pull_request_context?
       return "PR review already published for review ID #{review_id}; skipping." if already_published?
 
+      nil
+    end
+
+    def post_review
       response = request_json(:post, reviews_uri, builder.payload(commit_id: head_sha))
       raise Error, "GitHub PR review publication failed with status #{response.status_code}: #{response.body}" unless response.success?
 
-      "Published PR review for review ID #{review_id}."
+      "Published PR review for review ID #{run.review_id}."
     end
-
-    private
 
     GitHubResponse = Struct.new(:status_code, :body, keyword_init: true) do
       def success?

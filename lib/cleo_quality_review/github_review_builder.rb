@@ -23,8 +23,10 @@ module CleoQualityReview
         valid? && diff_map.commentable?(path, line)
       end
 
-      def to_payload(truncated_body:)
-        { path: path, line: line, side: "RIGHT", body: truncated_body }
+      def to_review_payload(diff_map:, truncator:)
+        return unless commentable_on?(diff_map)
+
+        { path: path, line: line, side: "RIGHT", body: truncator.call(body) }
       end
     end
 
@@ -82,9 +84,7 @@ module CleoQualityReview
     end
 
     def inline_comment_payload(comment)
-      return unless comment.commentable_on?(diff_map)
-
-      comment.to_payload(truncated_body: truncate(comment.body))
+      comment.to_review_payload(diff_map: diff_map, truncator: method(:truncate))
     end
 
     def rendered_comments

@@ -20,14 +20,15 @@ module CleoQualityReview
         findings = stdout.to_s.lines.filter_map { |line| parse_line(line) }
         return findings unless findings.empty? && stderr.to_s.strip != ""
 
-        [result({ check: "Execution error", message: stderr, filepath: nil })]
+        [result(check: "Execution error", message: stderr, filepath: nil)]
       end
 
       def parse_line(line)
         match = strip_ansi(line).match(/^(?<filepath>.+?):(?<line>\d+):?\s+(?<message>.+)$/)
         return unless match
 
-        result({ check: "Performance", message: match[:message], filepath: match[:filepath], line: match[:line] })
+        filepath, line_number, message = match.values_at(:filepath, :line, :message)
+        result(check: "Performance", message: message, filepath: filepath, line: line_number)
       end
 
       def strip_ansi(value)

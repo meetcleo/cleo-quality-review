@@ -66,7 +66,7 @@ module CleoQualityReview
     # @raise [MissingLlmConfigurationError] if API key is missing
     # @raise [ArgumentError] if timeout is invalid
     # @return [void]
-    def validate!
+    def validate
       raise MissingLlmConfigurationError, "Missing OpenAI API key. Set #{api_key_env}." unless configured?
 
       timeout_seconds

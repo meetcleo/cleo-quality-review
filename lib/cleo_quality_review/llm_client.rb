@@ -22,17 +22,31 @@ module CleoQualityReview
     # @param [String] prompt
     # @return [String] the generated review
     def generate_review(prompt)
-      response = provider_client.generate_review(prompt)
-      logger.log(query: prompt, response: response)
-      response
+      generate_with_logging(prompt)
     rescue StandardError => e
-      logger.log(query: prompt, response: "ERROR: #{e.class}: #{e.message}")
+      log_error(prompt, e)
       raise
     end
 
     private
 
     attr_reader :config, :logger
+
+    def generate_with_logging(prompt)
+      provider_client.generate_review(prompt).tap { |response| log_success(prompt, response) }
+    end
+
+    def log_success(prompt, response)
+      logger.log(query: prompt, response: response)
+    end
+
+    def log_error(prompt, error)
+      logger.log(query: prompt, response: format_error(error))
+    end
+
+    def format_error(error)
+      "ERROR: #{error.class}: #{error.message}"
+    end
 
     def provider_client
       provider.build_client(config: config)

@@ -25,7 +25,21 @@ module CleoQualityReview
 
   ##
   # Value object for a JSON POST request to OpenAI
-  OpenAiHttpRequest = Struct.new(:uri, :headers, :body, :timeout_seconds, keyword_init: true)
+  OpenAiHttpRequest = Struct.new(:uri, :headers, :body, :timeout_seconds, keyword_init: true) do
+    ##
+    # Execute the HTTP request
+    # @param [Net::HTTP::Post] http_request prepared request
+    # @yield [Net::HTTP] yields configured HTTP connection
+    # @return [Object] result of the block
+    def execute(http_request)
+      Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |http|
+        http.open_timeout = timeout_seconds
+        http.read_timeout = timeout_seconds
+        http.write_timeout = timeout_seconds
+        http.request(http_request)
+      end
+    end
+  end
 
   ##
   # HTTP transport layer for OpenAI API requests
@@ -51,19 +65,7 @@ module CleoQualityReview
     end
 
     def perform_request(request, http_request)
-      uri = request.uri
-      timeout_seconds = request.timeout_seconds
-
-      Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |http|
-        apply_timeouts(http, timeout_seconds)
-        http.request(http_request)
-      end
-    end
-
-    def apply_timeouts(http, timeout_seconds)
-      http.open_timeout = timeout_seconds
-      http.read_timeout = timeout_seconds
-      http.write_timeout = timeout_seconds
+      request.execute(http_request)
     end
   end
 
