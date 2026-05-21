@@ -13,11 +13,15 @@ module CleoQualityReview
         ##
         # @!attribute [rw] check_name
         #   @return [String] identifier for this check
+        attr_accessor :check_name
+
         # @!attribute [rw] tool
         #   @return [String] tool name for result attribution
+        attr_accessor :tool
+
         # @!attribute [rw] output_extension
         #   @return [String] file extension for raw output
-        attr_accessor :check_name, :tool, :output_extension
+        attr_accessor :output_extension
 
         ##
         # Set default output extension for subclasses
