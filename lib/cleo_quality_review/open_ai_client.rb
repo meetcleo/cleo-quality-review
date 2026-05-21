@@ -25,7 +25,21 @@ module CleoQualityReview
 
   ##
   # Value object for a JSON POST request to OpenAI
-  OpenAiHttpRequest = Struct.new(:uri, :headers, :body, :timeout_seconds, keyword_init: true)
+  OpenAiHttpRequest = Struct.new(:uri, :headers, :body, :timeout_seconds, keyword_init: true) do
+    ##
+    # Execute the HTTP request
+    # @param [Net::HTTP::Post] http_request prepared request
+    # @yield [Net::HTTP] yields configured HTTP connection
+    # @return [Object] result of the block
+    def execute(http_request)
+      Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |http|
+        http.open_timeout = timeout_seconds
+        http.read_timeout = timeout_seconds
+        http.write_timeout = timeout_seconds
+        http.request(http_request)
+      end
+    end
+  end
 
   ##
   # HTTP transport layer for OpenAI API requests
@@ -51,19 +65,7 @@ module CleoQualityReview
     end
 
     def perform_request(request, http_request)
-      uri = request.uri
-      timeout_seconds = request.timeout_seconds
-
-      Net::HTTP.start(uri.hostname, uri.port, use_ssl: uri.scheme == "https") do |http|
-        apply_timeouts(http, timeout_seconds)
-        http.request(http_request)
-      end
-    end
-
-    def apply_timeouts(http, timeout_seconds)
-      http.open_timeout = timeout_seconds
-      http.read_timeout = timeout_seconds
-      http.write_timeout = timeout_seconds
+      request.execute(http_request)
     end
   end
 
@@ -86,30 +88,41 @@ module CleoQualityReview
     # @return [String] generated review text
     # @raise [OpenAiApiError] if the API request fails
     def generate_review(prompt)
-      timeout_seconds = config.timeout_seconds
-      request = OpenAiHttpRequest.new(
-        uri: RESPONSES_API_URL,
-        headers: headers,
-        body: {
-          model: config.model,
-          input: prompt,
-        },
-        timeout_seconds: timeout_seconds,
-      )
-      response = http_transport.post_json(request)
-      raise OpenAiApiError, api_error_message(response) unless response.success?
-
-      extract_text(JSON.parse(response.body))
-    rescue JSON::ParserError => e
-      raise OpenAiApiError, "OpenAI Responses API returned invalid JSON: #{e.message}"
-    rescue Net::OpenTimeout, Net::ReadTimeout, Net::WriteTimeout => e
-      raise OpenAiApiError,
-        "OpenAI Responses API request timed out after #{timeout_seconds} seconds: #{e.class}: #{e.message}"
+      response = execute_request(prompt)
+      parse_response(response)
     end
 
     private
 
     attr_reader :config, :http_transport
+
+    def execute_request(prompt)
+      timeout_seconds = config.timeout_seconds
+      http_transport.post_json(build_request(prompt, timeout_seconds))
+    rescue Net::OpenTimeout, Net::ReadTimeout, Net::WriteTimeout => e
+      raise OpenAiApiError, timeout_error_message(timeout_seconds, e)
+    end
+
+    def parse_response(response)
+      raise OpenAiApiError, api_error_message(response) unless response.success?
+
+      extract_text(JSON.parse(response.body))
+    rescue JSON::ParserError => e
+      raise OpenAiApiError, "OpenAI Responses API returned invalid JSON: #{e.message}"
+    end
+
+    def build_request(prompt, timeout_seconds)
+      OpenAiHttpRequest.new(
+        uri: RESPONSES_API_URL,
+        headers: headers,
+        body: { model: config.model, input: prompt },
+        timeout_seconds: timeout_seconds,
+      )
+    end
+
+    def timeout_error_message(timeout_seconds, error)
+      "OpenAI Responses API request timed out after #{timeout_seconds} seconds: #{error.class}: #{error.message}"
+    end
 
     def headers
       {
@@ -119,15 +132,21 @@ module CleoQualityReview
     end
 
     def extract_text(response)
-      return response["output_text"] if response["output_text"].to_s.strip != ""
+      output_text = response["output_text"]
+      return output_text if output_text.to_s.strip != ""
 
-      text = Array(response["output"]).flat_map do |item|
-        Array(item["content"]).filter_map { |content| content["text"] }
-      end.join("\n")
-
+      text = extract_content_text(response)
       return text unless text.empty?
 
       JSON.pretty_generate(response)
+    end
+
+    def extract_content_text(response)
+      Array(response["output"]).flat_map { |item| extract_item_texts(item) }.join("\n")
+    end
+
+    def extract_item_texts(item)
+      Array(item["content"]).filter_map { |content| content["text"] }
     end
 
     def api_error_message(response)

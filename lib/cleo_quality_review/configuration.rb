@@ -104,16 +104,30 @@ module CleoQualityReview
 
       def load_file(path, seen: Set.new)
         expanded_path = expand_config_path(path, relative_to: root)
-        return {} if seen.include?(expanded_path)
-        raise ArgumentError, "Config file not found: #{expanded_path}" unless File.file?(expanded_path)
+        return {} if skip_file?(expanded_path, seen)
 
         seen.add(expanded_path)
+        load_with_inheritance(expanded_path, seen)
+      end
+
+      def skip_file?(expanded_path, seen)
+        return true if seen.include?(expanded_path)
+
+        raise ArgumentError, "Config file not found: #{expanded_path}" unless File.file?(expanded_path)
+
+        false
+      end
+
+      def load_with_inheritance(expanded_path, seen)
         config = read_yaml(expanded_path)
-        inherited_data = inherit_from(config).reduce({}) do |merged, inherited_path|
+        inherited_data = load_inherited(config, expanded_path, seen)
+        merge(inherited_data, config.except(INHERIT_FROM))
+      end
+
+      def load_inherited(config, expanded_path, seen)
+        inherit_from(config).reduce({}) do |merged, inherited_path|
           merge(merged, load_file(resolve_inherited_path(inherited_path, expanded_path), seen: seen))
         end
-
-        merge(inherited_data, config.except(INHERIT_FROM))
       end
 
       def read_yaml(path)
@@ -136,10 +150,10 @@ module CleoQualityReview
       end
 
       def expand_config_path(path, relative_to:)
-        expanded_path = File.expand_path(path.to_s)
-        return expanded_path if path.to_s.start_with?("/", "~")
+        path_string = path.to_s
+        return File.expand_path(path_string) if path_string.start_with?("/", "~")
 
-        File.expand_path(path.to_s, relative_to)
+        File.expand_path(path_string, relative_to)
       end
 
       def merge(base, override)
@@ -149,24 +163,30 @@ module CleoQualityReview
       end
 
       def merge_values(base_value, override_value)
-        if base_value.is_a?(Hash) && override_value.is_a?(Hash)
-          merge(base_value, override_value)
-        elsif base_value.is_a?(Array) && override_value.is_a?(Array)
-          (base_value + override_value).uniq
-        else
-          override_value
-        end
+        return merge(base_value, override_value) if both_hashes?(base_value, override_value)
+        return (base_value + override_value).uniq if both_arrays?(base_value, override_value)
+
+        override_value
       end
+
+      def both_hashes?(a, b) = a.is_a?(Hash) && b.is_a?(Hash)
+
+      def both_arrays?(a, b) = a.is_a?(Array) && b.is_a?(Array)
 
       def stringify_keys(value)
         case value
-        when Hash
-          value.to_h { |key, nested_value| [key.to_s, stringify_keys(nested_value)] }
-        when Array
-          value.map { |nested_value| stringify_keys(nested_value) }
-        else
-          value
+        when Hash then stringify_hash_keys(value)
+        when Array then stringify_array_values(value)
+        else value
         end
+      end
+
+      def stringify_hash_keys(hash)
+        hash.to_h { |key, v| [key.to_s, stringify_keys(v)] }
+      end
+
+      def stringify_array_values(array)
+        array.map { |v| stringify_keys(v) }
       end
     end
   end

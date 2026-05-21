@@ -44,17 +44,23 @@ module CleoQualityReview
     attr_reader :command_runner, :configuration
 
     def resolve_target_files(files, changed:)
-      candidates = if files.empty?
-        changed_files
-      elsif changed
-        filter_to_changed(expand_target_paths(files))
-      else
-        expand_target_paths(files)
-      end
+      candidates = resolve_candidates(files, changed: changed)
+      filter_to_configured(candidates)
+    end
 
-      candidates.select do |path|
-        File.file?(path) && configuration.target_file?(path)
-      end
+    def resolve_candidates(files, changed:)
+      return changed_files if files.empty?
+
+      resolve_explicit_paths(files, changed: changed)
+    end
+
+    def resolve_explicit_paths(files, changed:)
+      expanded = expand_target_paths(files)
+      changed ? filter_to_changed(expanded) : expanded
+    end
+
+    def filter_to_configured(candidates)
+      candidates.select { |path| File.file?(path) && configuration.target_file?(path) }
     end
 
     def filter_to_changed(paths)
@@ -95,16 +101,21 @@ module CleoQualityReview
 
     def expand_target_paths(paths)
       cleaned_paths = paths.map(&:to_s).map(&:strip).reject(&:empty?)
-      missing_paths = cleaned_paths.reject { |path| File.file?(path) || File.directory?(path) }
-      raise ArgumentError, "Path not found: #{missing_paths.join(', ')}" unless missing_paths.empty?
+      files, directories, missing = classify_paths(cleaned_paths)
+      raise ArgumentError, "Path not found: #{missing.join(', ')}" unless missing.empty?
 
-      cleaned_paths.flat_map do |path|
-        if File.directory?(path)
-          directory_files(path)
-        else
-          path
-        end
-      end.uniq
+      (files + directories.flat_map { |path| directory_files(path) }).uniq
+    end
+
+    def classify_paths(paths)
+      paths.group_by { |path| path_type(path) }.values_at(:file, :directory, :missing).map { |v| v || [] }
+    end
+
+    def path_type(path)
+      return :file if File.file?(path)
+      return :directory if File.directory?(path)
+
+      :missing
     end
 
     def directory_files(path)

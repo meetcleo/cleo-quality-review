@@ -66,5 +66,18 @@ module CleoQualityReview
         }
       end
     end
+
+    ##
+    # Build manifest data for artifact persistence
+    # @return [Hash{Symbol => Object}]
+    def manifest_data
+      {
+        review_id: review_id,
+        timestamp: timestamp,
+        checks: checks,
+        target_files: target_files,
+        ruby_files: ruby_files,
+      }
+    end
   end
 end

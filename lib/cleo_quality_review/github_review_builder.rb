@@ -23,13 +23,10 @@ module CleoQualityReview
         valid? && diff_map.commentable?(path, line)
       end
 
-      def to_review_payload(body:)
-        {
-          path: path,
-          line: line,
-          side: "RIGHT",
-          body: body,
-        }
+      def to_review_payload(diff_map:, truncator:)
+        return unless commentable_on?(diff_map)
+
+        { path: path, line: line, side: "RIGHT", body: truncator.call(body) }
       end
     end
 
@@ -87,9 +84,7 @@ module CleoQualityReview
     end
 
     def inline_comment_payload(comment)
-      return unless comment.commentable_on?(diff_map)
-
-      comment.to_review_payload(body: truncate(comment.body))
+      comment.to_review_payload(diff_map: diff_map, truncator: method(:truncate))
     end
 
     def rendered_comments
@@ -123,12 +118,16 @@ module CleoQualityReview
     end
 
     def inline_summary(comments)
-      requested = rendered_comments.length
-      comment_count = comments.length
-      return "No rendered comments mapped to commentable PR diff lines." if comments.empty? && requested.positive?
-      return if requested == comment_count
+      published_count = comments.length
+      requested_count = rendered_comments.length
+      omitted_comments_message(published_count, requested_count)
+    end
 
-      omitted = requested - comment_count
+    def omitted_comments_message(published, requested)
+      return "No rendered comments mapped to commentable PR diff lines." if published.zero? && requested.positive?
+      return if published == requested
+
+      omitted = requested - published
       "#{omitted} rendered comment#{'s' unless omitted == 1} were omitted because they did not map to commentable PR diff lines."
     end
 

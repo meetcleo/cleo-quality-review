@@ -45,10 +45,7 @@ module CleoQualityReview
         return empty_output if files.empty?
 
         command_result = command_runner.run(*command(files))
-
-        CheckOutput.new(
-          check_name: self.class.check_name,
-          extension: self.class.output_extension,
+        build_output(
           raw_output: raw_output(command_result),
           results: parse(command_result.stdout, parseable_stderr(command_result)),
         )
@@ -58,13 +55,20 @@ module CleoQualityReview
 
       attr_reader :command_runner, :timestamp
 
+      def check_metadata
+        @check_metadata ||= begin
+          klass = self.class
+          [klass.check_name, klass.output_extension, klass.tool]
+        end
+      end
+
       def empty_output
-        CheckOutput.new(
-          check_name: self.class.check_name,
-          extension: self.class.output_extension,
-          raw_output: "",
-          results: [],
-        )
+        build_output(raw_output: "", results: [])
+      end
+
+      def build_output(raw_output:, results:)
+        check_name, extension, _tool = check_metadata
+        CheckOutput.new(check_name: check_name, extension: extension, raw_output: raw_output, results: results)
       end
 
       def ruby_executable
@@ -76,10 +80,13 @@ module CleoQualityReview
       end
 
       def raw_output(command_result)
-        return command_result.stdout if command_result.success?
-        return command_result.stdout if command_result.stderr.empty?
+        stdout = command_result.stdout
+        return stdout if command_result.success?
 
-        [command_result.stdout, command_result.stderr].reject(&:empty?).join("\n")
+        stderr = command_result.stderr
+        return stdout if stderr.empty?
+
+        [stdout, stderr].reject(&:empty?).join("\n")
       end
 
       def parseable_stderr(command_result)
@@ -87,8 +94,9 @@ module CleoQualityReview
       end
 
       def result(check:, message:, filepath:, line: nil)
+        _check_name, _extension, tool = check_metadata
         CleoQualityReview::Result.new(
-          tool: self.class.tool,
+          tool: tool,
           check: check,
           timestamp: timestamp,
           result: message,

@@ -73,18 +73,7 @@ module CleoQualityReview
     # @param [Run] run completed run
     # @return [void]
     def write_manifest(run)
-      File.write(
-        manifest_path,
-        JSON.pretty_generate(
-          {
-            review_id: run.review_id,
-            timestamp: run.timestamp,
-            checks: run.checks,
-            target_files: run.target_files,
-            ruby_files: run.ruby_files,
-          },
-        ),
-      )
+      File.write(manifest_path, JSON.pretty_generate(run.manifest_data))
     end
 
     ##
@@ -103,13 +92,14 @@ module CleoQualityReview
       raise ArgumentError, "No completed quality review artifacts found for review ID #{review_id}" unless complete?
 
       manifest = read_manifest
+      target_files = manifest.fetch("target_files", [])
       Run.new(
         timestamp: manifest.fetch("timestamp"),
         review_id: manifest.fetch("review_id"),
         format: format,
         checks: manifest.fetch("checks", []),
-        target_files: manifest.fetch("target_files", []),
-        ruby_files: manifest.fetch("ruby_files", manifest.fetch("target_files", [])),
+        target_files: target_files,
+        ruby_files: manifest.fetch("ruby_files", target_files),
         run_directory: path,
         results: read_results,
         artifacts: self,
@@ -171,18 +161,20 @@ module CleoQualityReview
     end
 
     def read_results
-      JSON.parse(File.read(results_path)).map do |hash|
-        Result.new(
-          tool: hash["tool"],
-          check: hash["check"],
-          timestamp: hash["timestamp"],
-          result: hash["result"],
-          filepath: hash["filepath"],
-          line: hash["line"],
-        )
-      end
+      JSON.parse(File.read(results_path)).map { |hash| result_from_hash(hash) }
     rescue Errno::ENOENT
       []
+    end
+
+    def result_from_hash(hash)
+      Result.new(
+        tool: hash["tool"],
+        check: hash["check"],
+        timestamp: hash["timestamp"],
+        result: hash["result"],
+        filepath: hash["filepath"],
+        line: hash["line"],
+      )
     end
   end
 end

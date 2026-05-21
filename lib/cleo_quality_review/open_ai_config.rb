@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "llm_errors"
+
 module CleoQualityReview
   ##
   # Configuration for OpenAI API access
@@ -57,6 +59,17 @@ module CleoQualityReview
     # @return [Boolean]
     def configured?
       env.fetch(OPEN_AI_API_KEY, "").to_s.strip != ""
+    end
+
+    ##
+    # Validate that the configuration is complete
+    # @raise [MissingLlmConfigurationError] if API key is missing
+    # @raise [ArgumentError] if timeout is invalid
+    # @return [void]
+    def validate
+      raise MissingLlmConfigurationError, "Missing OpenAI API key. Set #{api_key_env}." unless configured?
+
+      timeout_seconds
     end
 
     private

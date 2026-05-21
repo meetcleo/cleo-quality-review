@@ -23,14 +23,16 @@ module CleoQualityReview
         smells = parse_json(stdout)
         return stderr_result(stderr) if smells.empty? && stderr.to_s.strip != ""
 
-        smells.map do |smell|
-          result(
-            check: smell.fetch("smell_type", "Reek"),
-            message: smell_message(smell),
-            filepath: smell.fetch("source", nil),
-            line: Array(smell["lines"]).first,
-          )
-        end
+        smells.map { |smell| smell_to_result(smell) }
+      end
+
+      def smell_to_result(smell)
+        result(
+          check: smell.fetch("smell_type", "Reek"),
+          message: smell_message(smell),
+          filepath: smell.fetch("source", nil),
+          line: Array(smell["lines"]).first,
+        )
       end
 
       def parse_json(stdout)
@@ -44,13 +46,7 @@ module CleoQualityReview
       end
 
       def stderr_result(stderr)
-        [
-          result(
-            check: "Execution error",
-            message: stderr,
-            filepath: nil,
-          ),
-        ]
+        [result(check: "Execution error", message: stderr, filepath: nil)]
       end
     end
   end

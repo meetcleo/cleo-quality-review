@@ -23,7 +23,22 @@ module CleoQualityReview
     #   @return [Array<String>] checks to exclude
     # @!attribute [r] changed
     #   @return [Boolean] whether to filter to changed files only
-    ParseResult = Struct.new(:format, :checks, :files, :exclude, :changed, :log, :review_id, :review_file, keyword_init: true)
+    ParseResult = Struct.new(:format, :checks, :files, :exclude, :changed, :log, :review_id, :review_file, keyword_init: true) do
+      ##
+      # @return [String] validated review_id
+      # @raise [OptionParser::MissingArgument] if review_id is blank
+      def validated_review_id
+        raise OptionParser::MissingArgument, "--review-id is required" if review_id.to_s.strip == ""
+
+        review_id
+      end
+
+      ##
+      # @return [Hash] run loading attributes
+      def run_loading_params
+        { format: format, log: log }
+      end
+    end
 
     ##
     # Parse command-line arguments
@@ -95,17 +110,21 @@ module CleoQualityReview
     end
 
     def register_check_options(opts)
-      opts.on("-c", "--checks CHECKS", Array, "Checks to run: all, reek, flog, fasterer") do |values|
-        checks.concat(values)
-      end
+      register_checks_option(opts)
+      register_only_option(opts)
+      register_exclude_option(opts)
+    end
 
-      opts.on("--only CHECKS", Array, "Alias for --checks") do |values|
-        checks.concat(values)
-      end
+    def register_checks_option(opts)
+      opts.on("-c", "--checks CHECKS", Array, "Checks to run: all, reek, flog, fasterer") { |values| checks.concat(values) }
+    end
 
-      opts.on("-x", "--exclude CHECKS", Array, "Checks to exclude") do |values|
-        exclude.concat(values)
-      end
+    def register_only_option(opts)
+      opts.on("--only CHECKS", Array, "Alias for --checks") { |values| checks.concat(values) }
+    end
+
+    def register_exclude_option(opts)
+      opts.on("-x", "--exclude CHECKS", Array, "Checks to exclude") { |values| exclude.concat(values) }
     end
 
     def register_target_options(opts)
@@ -119,17 +138,21 @@ module CleoQualityReview
     end
 
     def register_output_options(opts)
-      opts.on("--log", "Log LLM queries and responses to log/[provider].log") do
-        @log = true
-      end
+      register_log_option(opts)
+      register_review_id_option(opts)
+      register_review_file_option(opts)
+    end
 
-      opts.on("--review-id REVIEW_ID", "Reuse an existing analysis artifact by review ID") do |value|
-        @review_id = value
-      end
+    def register_log_option(opts)
+      opts.on("--log", "Log LLM queries and responses to log/[provider].log") { @log = true }
+    end
 
-      opts.on("--review-file PATH", "Rendered pr_review JSON to publish") do |value|
-        @review_file = value
-      end
+    def register_review_id_option(opts)
+      opts.on("--review-id REVIEW_ID", "Reuse an existing analysis artifact by review ID") { |value| @review_id = value }
+    end
+
+    def register_review_file_option(opts)
+      opts.on("--review-file PATH", "Rendered pr_review JSON to publish") { |value| @review_file = value }
     end
 
     def register_help_option(opts)
