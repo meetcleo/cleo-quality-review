@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "../../test_helper"
+require "cleo_quality_review/checks/quality_check"
 require "cleo_quality_review/run_artifacts"
 
 module CleoQualityReview
@@ -22,36 +23,7 @@ module CleoQualityReview
 
     def test_reconstructs_run_from_completed_artifacts
       in_tmpdir do
-        artifacts = RunArtifacts.new(
-          review_id: "review-id",
-          timestamp: 123,
-          target_files: ["app/example.rb"],
-          changes_diff: "diff",
-        ).prepare!
-
-        run = Run.new(
-          timestamp: 123,
-          review_id: "review-id",
-          format: "agent",
-          checks: ["fake"],
-          target_files: ["app/example.rb"],
-          ruby_files: ["app/example.rb"],
-          run_directory: artifacts.to_s,
-          results: [Result.new(tool_name: "fake", tool_type: "custom", check: "Fake", timestamp: 123, result: "message", filepath: "app/example.rb", line: 1)],
-          artifacts: artifacts,
-        )
-        artifacts.write_results(run.results)
-        artifacts.write_manifest(run)
-        artifacts.mark_complete!
-
-        loaded = RunArtifacts.load(review_id: "review-id").to_run(format: "github")
-
-        assert_equal "review-id", loaded.review_id
-        assert_equal "github", loaded.format
-        assert_equal ["app/example.rb"], loaded.target_files
-        assert_equal "fake", loaded.results.first.tool_name
-        assert_equal "custom", loaded.results.first.tool_type
-        assert_equal "message", loaded.results.first.result
+        assert_reconstructed_run(load_completed_run)
       end
     end
 
@@ -80,13 +52,15 @@ module CleoQualityReview
           changes_diff: "diff",
         ).prepare!
 
-        artifacts.write_check_output(
+        check_output = Checks::CheckOutput.new(
           check_name: "reek",
           tool_name: "reek",
           tool_type: "smell_detection",
           extension: "json",
-          output: "[]",
+          raw_output: "[]",
+          results: [],
         )
+        artifacts.write_check_output(check_output)
 
         expected_path = "tmp/quality_checks/review-id/smell_detection/reek/raw_output.json"
         record = artifacts.raw_check_output_records.first
@@ -121,6 +95,70 @@ module CleoQualityReview
         assert_equal "json", record.extension
         assert_equal "[]", record.raw_output
       end
+    end
+
+    private
+
+    def load_completed_run
+      artifacts = prepared_artifacts
+      run = completed_run(artifacts)
+      artifacts.write_results(run.results)
+      artifacts.write_manifest(run)
+      artifacts.mark_complete!
+
+      RunArtifacts.load(review_id: "review-id").to_run(format: "github")
+    end
+
+    def assert_reconstructed_run(run)
+      review_id, format, target_files = run.to_h.values_at(:review_id, :format, :target_files)
+
+      assert_equal "review-id", review_id
+      assert_equal "github", format
+      assert_equal ["app/example.rb"], target_files
+      assert_reconstructed_result(run.results.first)
+    end
+
+    def assert_reconstructed_result(result)
+      tool_name, tool_type, message = result.to_h.values_at(:tool_name, :tool_type, :result)
+
+      assert_equal "fake", tool_name
+      assert_equal "custom", tool_type
+      assert_equal "message", message
+    end
+
+    def prepared_artifacts
+      RunArtifacts.new(
+        review_id: "review-id",
+        timestamp: 123,
+        target_files: ["app/example.rb"],
+        changes_diff: "diff",
+      ).prepare!
+    end
+
+    def completed_run(artifacts)
+      Run.new(
+        timestamp: 123,
+        review_id: "review-id",
+        format: "agent",
+        checks: ["fake"],
+        target_files: ["app/example.rb"],
+        ruby_files: ["app/example.rb"],
+        run_directory: artifacts.to_s,
+        results: [sample_result],
+        artifacts: artifacts,
+      )
+    end
+
+    def sample_result
+      Result.new(
+        tool_name: "fake",
+        tool_type: "custom",
+        check: "Fake",
+        timestamp: 123,
+        result: "message",
+        filepath: "app/example.rb",
+        line: 1,
+      )
     end
   end
 end

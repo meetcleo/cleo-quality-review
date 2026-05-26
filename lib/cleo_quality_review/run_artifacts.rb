@@ -62,13 +62,12 @@ module CleoQualityReview
 
     ##
     # Write raw check output to a file
-    # @param [String] check_name name of the check
-    # @param [String] tool_name name of the concrete tool
-    # @param [String] tool_type category of tool findings
-    # @param [String] extension file extension for the output
-    # @param [String] output raw check output content
+    # @param [Checks::CheckOutput] check_output output record from a quality check
     # @return [void]
-    def write_check_output(check_name:, tool_name:, tool_type:, extension:, output:)
+    def write_check_output(check_output)
+      check_name, tool_type, extension, output = check_output.to_h.values_at(
+        :check_name, :tool_type, :extension, :raw_output
+      )
       check_path = check_output_path(check_name: check_name, tool_type: tool_type)
       FileUtils.mkdir_p(check_path)
       File.write(File.join(check_path, "raw_output.#{extension}"), output)
@@ -205,8 +204,9 @@ module CleoQualityReview
 
     def typed_raw_check_output_records
       Dir.glob(File.join(path, "*", "*", "raw_output.*")).sort.map do |filepath|
-        check_name = File.basename(File.dirname(filepath))
-        tool_type = File.basename(File.dirname(File.dirname(filepath)))
+        check_dir = File.dirname(filepath)
+        check_name = File.basename(check_dir)
+        tool_type = File.basename(File.dirname(check_dir))
 
         raw_check_output_record(
           filepath: filepath,

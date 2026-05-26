@@ -35,6 +35,15 @@ module CleoQualityReview
           super
           subclass.output_extension = "txt"
         end
+
+        def output_metadata
+          {
+            check_name: check_name,
+            tool_name: tool_name,
+            tool_type: tool_type,
+            extension: output_extension,
+          }
+        end
       end
 
       ##
@@ -64,10 +73,7 @@ module CleoQualityReview
       attr_reader :command_runner, :timestamp
 
       def check_metadata
-        @check_metadata ||= begin
-          klass = self.class
-          [klass.check_name, klass.output_extension, klass.tool_name, klass.tool_type]
-        end
+        @check_metadata ||= self.class.output_metadata
       end
 
       def empty_output
@@ -75,12 +81,8 @@ module CleoQualityReview
       end
 
       def build_output(raw_output:, results:)
-        check_name, extension, tool_name, tool_type = check_metadata
         CheckOutput.new(
-          check_name: check_name,
-          tool_name: tool_name,
-          tool_type: tool_type,
-          extension: extension,
+          **check_metadata,
           raw_output: raw_output,
           results: results,
         )
@@ -108,11 +110,10 @@ module CleoQualityReview
         command_result.success? ? "" : command_result.stderr
       end
 
-      def result(check:, message:, filepath:, line: nil)
-        _check_name, _extension, tool_name, tool_type = check_metadata
+      def result(attributes)
+        check, message, filepath, line = attributes.values_at(:check, :message, :filepath, :line)
         CleoQualityReview::Result.new(
-          tool_name: tool_name,
-          tool_type: tool_type,
+          **check_metadata.slice(:tool_name, :tool_type),
           check: check,
           timestamp: timestamp,
           result: message,

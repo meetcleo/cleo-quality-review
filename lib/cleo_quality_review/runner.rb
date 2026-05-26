@@ -128,13 +128,7 @@ module CleoQualityReview
 
     def write_check_outputs(artifacts, check_outputs)
       check_outputs.each do |output|
-        artifacts.write_check_output(
-          check_name: output.check_name,
-          tool_name: output.tool_name,
-          tool_type: output.tool_type,
-          extension: output.extension,
-          output: output.raw_output,
-        )
+        artifacts.write_check_output(output)
       end
     end
 

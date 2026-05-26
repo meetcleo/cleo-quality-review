@@ -34,8 +34,10 @@ module CleoQualityReview
     def test_defaults_to_all_checks
       register_default_checks
 
-      assert_equal %w[reek flog fasterer], CheckRegistry.resolve(["all"]).map(&:check_name)
-      assert_equal %w[smell_detection complexity performance], CheckRegistry.resolve(["all"]).map(&:tool_type)
+      checks = CheckRegistry.resolve(["all"])
+
+      assert_equal %w[reek flog fasterer], checks.map(&:check_name)
+      assert_equal %w[smell_detection complexity performance], checks.map(&:tool_type)
     end
 
     def test_resolves_repeated_comma_separated_checks
