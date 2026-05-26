@@ -21,7 +21,7 @@ module CleoQualityReview
 
       def parse(stdout, stderr)
         findings = missing_methods(stdout).flat_map do |class_name, methods|
-          Array(methods).map { |entry| method_to_result(class_name, entry) }
+          results_for_class(class_name, methods)
         end
         return findings unless findings.empty? && stderr.to_s.strip != ""
 
@@ -36,6 +36,10 @@ module CleoQualityReview
         missing
       rescue JSON::ParserError
         {}
+      end
+
+      def results_for_class(class_name, methods)
+        Array(methods).map { |entry| method_to_result(class_name, entry) }
       end
 
       def method_to_result(class_name, entry)
