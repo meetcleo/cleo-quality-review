@@ -28,6 +28,18 @@ module CleoQualityReview
     :line,
     keyword_init: true,
   ) do
+    def self.from_h(hash)
+      new(
+        tool_name: hash["tool_name"] || hash["tool"],
+        tool_type: hash["tool_type"],
+        check: hash["check"],
+        timestamp: hash["timestamp"],
+        result: hash["result"],
+        filepath: hash["filepath"],
+        line: hash["line"],
+      )
+    end
+
     ##
     # Convert the result to a hash, omitting nil values
     # @return [Hash{Symbol => Object}]

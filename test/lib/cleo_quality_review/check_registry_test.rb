@@ -64,9 +64,10 @@ module CleoQualityReview
       error = assert_raises(ArgumentError) do
         CheckRegistry.resolve(["missing"])
       end
+      message = error.message
 
-      assert_includes error.message, 'Unknown check "missing"'
-      assert_includes error.message, "Expected one of: reek, flog, fasterer, all"
+      assert_includes message, 'Unknown check "missing"'
+      assert_includes message, "Expected one of: reek, flog, fasterer, all"
     end
 
     private

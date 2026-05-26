@@ -144,9 +144,7 @@ module CleoQualityReview
     end
 
     def persist_run(artifacts, run)
-      artifacts.write_results(run.results)
-      artifacts.write_manifest(run)
-      artifacts.mark_complete!
+      artifacts.write_run(run)
     end
 
     def review_id_for(changes, check_classes)

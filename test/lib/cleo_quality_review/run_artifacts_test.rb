@@ -90,9 +90,7 @@ module CleoQualityReview
     def load_completed_run
       artifacts = prepared_artifacts
       run = completed_run(artifacts)
-      artifacts.write_results(run.results)
-      artifacts.write_manifest(run)
-      artifacts.mark_complete!
+      artifacts.write_run(run)
 
       RunArtifacts.load(review_id: "review-id").to_run(format: "github")
     end
