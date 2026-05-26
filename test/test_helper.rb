@@ -8,6 +8,7 @@ end
 
 require "fileutils"
 require "minitest/autorun"
+require "minitest/rg"
 require "tmpdir"
 
 $LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
