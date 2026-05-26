@@ -59,12 +59,7 @@ module CleoQualityReview
     def check_outputs
       return [] unless artifacts
 
-      artifacts.raw_check_outputs.map do |check, output|
-        {
-          check: check,
-          raw_output: output,
-        }
-      end
+      artifacts.raw_check_output_records.map(&:to_h)
     end
 
     ##

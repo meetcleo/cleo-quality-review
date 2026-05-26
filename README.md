@@ -28,7 +28,7 @@ GITHUB_TOKEN=... bundle exec check_quality publish-pr-review --review-id "${revi
 
 ## Checks
 
-The gem embeds Ruby check adapters for Reek, Flog, and Fasterer. Each run writes raw tool artifacts to `tmp/quality_checks/<review_id>/<check>/raw_output.*` and also normalizes findings for machine-readable output.
+The gem embeds Ruby check adapters for Reek, Flog, and Fasterer. Each run writes raw tool artifacts to `tmp/quality_checks/<review_id>/<tool_type>/<check>/raw_output.*` and also normalizes findings for machine-readable output.
 
 `agent` output uses the agent prompt to condense run metadata, the git diff, raw tool outputs, and normalized findings into JSON for coding agents.
 

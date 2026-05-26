@@ -3,6 +3,7 @@
 require "digest"
 require "json"
 
+require_relative "../cleo_quality_review"
 require_relative "changes_diff"
 require_relative "check_registry"
 require_relative "command_runner"
@@ -127,11 +128,7 @@ module CleoQualityReview
 
     def write_check_outputs(artifacts, check_outputs)
       check_outputs.each do |output|
-        artifacts.write_check_output(
-          check_name: output.check_name,
-          extension: output.extension,
-          output: output.raw_output,
-        )
+        artifacts.write_check_output(output)
       end
     end
 
@@ -147,9 +144,7 @@ module CleoQualityReview
     end
 
     def persist_run(artifacts, run)
-      artifacts.write_results(run.results)
-      artifacts.write_manifest(run)
-      artifacts.mark_complete!
+      artifacts.write_run(run)
     end
 
     def review_id_for(changes, check_classes)

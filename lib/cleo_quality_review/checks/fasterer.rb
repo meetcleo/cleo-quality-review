@@ -8,7 +8,7 @@ module CleoQualityReview
     # Quality check implementation for Fasterer performance analyzer
     class Fasterer < QualityCheck
       self.check_name = "fasterer"
-      self.tool = "fasterer"
+      self.tool_name = "fasterer"
 
       private
 
@@ -24,15 +24,11 @@ module CleoQualityReview
       end
 
       def parse_line(line)
-        match = strip_ansi(line).match(/^(?<filepath>.+?):(?<line>\d+):?\s+(?<message>.+)$/)
+        match = line.to_s.gsub(/\e\[[\d;]*m/, "").match(/^(?<filepath>.+?):(?<line>\d+):?\s+(?<message>.+)$/)
         return unless match
 
         filepath, line_number, message = match.values_at(:filepath, :line, :message)
         result(check: "Performance", message: message, filepath: filepath, line: line_number)
-      end
-
-      def strip_ansi(value)
-        value.to_s.gsub(/\e\[[\d;]*m/, "")
       end
     end
   end

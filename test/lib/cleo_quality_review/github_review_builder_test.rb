@@ -62,8 +62,8 @@ module CleoQualityReview
 
     def results
       [
-        Result.new(tool: "reek", check: "DuplicateMethodCall", timestamp: 123, result: "call repeated", filepath: "app/example.rb", line: 2),
-        Result.new(tool: "flog", check: "Complexity", timestamp: 123, result: "too complex", filepath: "app/other.rb", line: 1),
+        Result.new(tool_name: "reek", tool_type: "smell_detection", check: "DuplicateMethodCall", timestamp: 123, result: "call repeated", filepath: "app/example.rb", line: 2),
+        Result.new(tool_name: "flog", tool_type: "complexity", check: "Complexity", timestamp: 123, result: "too complex", filepath: "app/other.rb", line: 1),
       ]
     end
 

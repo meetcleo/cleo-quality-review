@@ -50,8 +50,8 @@ module CleoQualityReview
     end
 
     def check_outputs_section
-      artifacts.raw_check_outputs.map do |check_name, output|
-        fenced("Raw #{check_name} output", language_for("raw_output"), output)
+      artifacts.raw_check_output_records.map do |record|
+        fenced("Raw #{raw_output_title(record)} output", language_for(record.path), record.raw_output)
       end.join("\n\n")
     end
 
@@ -76,6 +76,10 @@ module CleoQualityReview
       else
         "text"
       end
+    end
+
+    def raw_output_title(record)
+      [record.tool_type, record.check_name].compact.join("/")
     end
 
     def fenced(title, language, content)

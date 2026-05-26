@@ -20,7 +20,8 @@ Output valid JSON matching this exact schema:
     "target_files": [<file paths from metadata>],
     "findings": [
       {
-        "tool": "<reek|flog|fasterer>",
+        "tool_name": "<reek|flog|fasterer>",
+        "tool_type": "<smell_detection|complexity|performance>",
         "check": "<specific check type>",
         "filepath": "<relative file path>",
         "line": <line number or null>,
@@ -31,7 +32,10 @@ Output valid JSON matching this exact schema:
   "check_outputs": [
     {
       "check_name": "<check name>",
+      "tool_name": "<reek|flog|fasterer>",
+      "tool_type": "<smell_detection|complexity|performance>",
       "extension": "<json|txt>",
+      "path": "<raw output artifact path>",
       "raw_output": "<raw tool output>"
     }
   ],

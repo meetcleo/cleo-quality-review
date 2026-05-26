@@ -4,8 +4,10 @@ module CleoQualityReview
   ##
   # Value object representing a single finding from a quality check
   #
-  # @!attribute [r] tool
+  # @!attribute [r] tool_name
   #   @return [String] name of the tool that produced this result
+  # @!attribute [r] tool_type
+  #   @return [String] category for the tool that produced this result
   # @!attribute [r] check
   #   @return [String] specific check or rule that triggered
   # @!attribute [r] timestamp
@@ -17,7 +19,8 @@ module CleoQualityReview
   # @!attribute [r] line
   #   @return [Integer, nil] line number of the issue
   Result = Struct.new(
-    :tool,
+    :tool_name,
+    :tool_type,
     :check,
     :timestamp,
     :result,
@@ -25,12 +28,25 @@ module CleoQualityReview
     :line,
     keyword_init: true,
   ) do
+    def self.from_h(hash)
+      new(
+        tool_name: hash["tool_name"] || hash["tool"],
+        tool_type: hash["tool_type"],
+        check: hash["check"],
+        timestamp: hash["timestamp"],
+        result: hash["result"],
+        filepath: hash["filepath"],
+        line: hash["line"],
+      )
+    end
+
     ##
     # Convert the result to a hash, omitting nil values
     # @return [Hash{Symbol => Object}]
     def to_h
       {
-        tool: tool,
+        tool_name: tool_name,
+        tool_type: tool_type,
         check: check,
         timestamp: timestamp,
         result: result,

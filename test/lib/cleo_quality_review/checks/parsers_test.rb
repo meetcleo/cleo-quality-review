@@ -29,7 +29,8 @@ module CleoQualityReview
 
         result = Reek.new(command_runner: runner(output), timestamp: 123).run(["app/example.rb"]).results.first
 
-        assert_equal "reek", result.tool
+        assert_equal "reek", result.tool_name
+        assert_equal "smell_detection", result.tool_type
         assert_equal "UtilityFunction", result.check
         assert_equal "Example: does not depend on instance state", result.result
         assert_equal "app/example.rb", result.filepath
@@ -41,7 +42,8 @@ module CleoQualityReview
 
         result = Flog.new(command_runner: runner(output), timestamp: 123).run(["lib/tasks/import.rake"]).results.first
 
-        assert_equal "flog", result.tool
+        assert_equal "flog", result.tool_name
+        assert_equal "complexity", result.tool_type
         assert_equal "Complexity", result.check
         assert_equal "12.3: Example#perform", result.result
         assert_equal "lib/tasks/import.rake", result.filepath
@@ -53,7 +55,8 @@ module CleoQualityReview
 
         result = Fasterer.new(command_runner: runner(output), timestamp: 123).run(["lib/tasks/import.rake"]).results.first
 
-        assert_equal "fasterer", result.tool
+        assert_equal "fasterer", result.tool_name
+        assert_equal "performance", result.tool_type
         assert_equal "Performance", result.check
         assert_equal "Use Hash#each_key instead of Hash#keys.each.", result.result
         assert_equal "lib/tasks/import.rake", result.filepath

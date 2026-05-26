@@ -15,9 +15,13 @@ module CleoQualityReview
         #   @return [String] identifier for this check
         attr_accessor :check_name
 
-        # @!attribute [rw] tool
+        # @!attribute [rw] tool_name
         #   @return [String] tool name for result attribution
-        attr_accessor :tool
+        attr_accessor :tool_name
+
+        # @!attribute [rw] tool_type
+        #   @return [String] category for this tool's findings
+        attr_accessor :tool_type
 
         # @!attribute [rw] output_extension
         #   @return [String] file extension for raw output
@@ -30,6 +34,15 @@ module CleoQualityReview
         def inherited(subclass)
           super
           subclass.output_extension = "txt"
+        end
+
+        def output_metadata
+          {
+            check_name: check_name,
+            tool_name: tool_name,
+            tool_type: tool_type,
+            extension: output_extension,
+          }
         end
       end
 
@@ -60,10 +73,7 @@ module CleoQualityReview
       attr_reader :command_runner, :timestamp
 
       def check_metadata
-        @check_metadata ||= begin
-          klass = self.class
-          [klass.check_name, klass.output_extension, klass.tool]
-        end
+        @check_metadata ||= self.class.output_metadata
       end
 
       def empty_output
@@ -71,8 +81,11 @@ module CleoQualityReview
       end
 
       def build_output(raw_output:, results:)
-        check_name, extension, _tool = check_metadata
-        CheckOutput.new(check_name: check_name, extension: extension, raw_output: raw_output, results: results)
+        CheckOutput.new(
+          **check_metadata,
+          raw_output: raw_output,
+          results: results,
+        )
       end
 
       def ruby_executable
@@ -97,10 +110,10 @@ module CleoQualityReview
         command_result.success? ? "" : command_result.stderr
       end
 
-      def result(check:, message:, filepath:, line: nil)
-        _check_name, _extension, tool = check_metadata
+      def result(attributes)
+        check, message, filepath, line = attributes.values_at(:check, :message, :filepath, :line)
         CleoQualityReview::Result.new(
-          tool: tool,
+          **check_metadata.slice(:tool_name, :tool_type),
           check: check,
           timestamp: timestamp,
           result: message,
@@ -115,12 +128,16 @@ module CleoQualityReview
     #
     # @!attribute [r] check_name
     #   @return [String] identifier for the check
+    # @!attribute [r] tool_name
+    #   @return [String] name of the concrete tool
+    # @!attribute [r] tool_type
+    #   @return [String] category for this tool's findings
     # @!attribute [r] extension
     #   @return [String] file extension for the raw output
     # @!attribute [r] raw_output
     #   @return [String] raw tool output
     # @!attribute [r] results
     #   @return [Array<Result>] parsed findings
-    CheckOutput = Struct.new(:check_name, :extension, :raw_output, :results, keyword_init: true)
+    CheckOutput = Struct.new(:check_name, :tool_name, :tool_type, :extension, :raw_output, :results, keyword_init: true)
   end
 end
