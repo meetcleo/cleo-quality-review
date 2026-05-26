@@ -2,7 +2,9 @@
 
 module CleoQualityReview
   module Checks
+    require_relative "checks/quality_check"
+    require_relative "checks/reek"
+    require_relative "checks/flog"
+    require_relative "checks/fasterer"
   end
 end
-
-Dir[File.join(__dir__, "checks", "*.rb")].sort.each { |path| require path }
