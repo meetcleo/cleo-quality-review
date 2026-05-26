@@ -24,6 +24,7 @@ Gem::Specification.new do |spec|
   spec.executables = ["check_quality"]
   spec.require_paths = ["lib"]
 
+  spec.add_dependency "debride"
   spec.add_dependency "fasterer"
   spec.add_dependency "flog"
   spec.add_dependency "reek"

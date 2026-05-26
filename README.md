@@ -10,6 +10,7 @@ Local quality checks for Cleo repositories.
 ```bash
 bundle exec check_quality --format agent --checks reek --files vendor/cleo_quality_review/lib
 bundle exec check_quality --format github --checks fasterer --files app/services/my_area
+bundle exec check_quality --checks debride --files app/models/example.rb
 CLEO_QUALITY_REVIEW_OPEN_AI_KEY=sk-... bundle exec check_quality --format human --files app/models/example.rb
 ```
 
@@ -28,7 +29,9 @@ GITHUB_TOKEN=... bundle exec check_quality publish-pr-review --review-id "${revi
 
 ## Checks
 
-The gem embeds Ruby check adapters for Reek, Flog, and Fasterer. Each run writes raw tool artifacts to `tmp/quality_checks/<review_id>/<tool_type>/<check>/raw_output.*` and also normalizes findings for machine-readable output.
+The gem embeds Ruby check adapters for Reek, Flog, Fasterer, and Debride. Each run writes raw tool artifacts to `tmp/quality_checks/<review_id>/<tool_type>/<check>/raw_output.*` and also normalizes findings for machine-readable output.
+
+Debride reports methods that static analysis thinks may be unused. It runs with Rails-aware analysis by default, and its findings should be treated as candidates for investigation rather than automatic deletion.
 
 `agent` output uses the agent prompt to condense run metadata, the git diff, raw tool outputs, and normalized findings into JSON for coding agents.
 
@@ -104,7 +107,7 @@ flowchart LR
     CheckRegistry --> QualityCheck["QualityCheck"]:::rounded
     Runner --> QualityCheck
     QualityCheck --> CommandRunner["CommandRunner"]:::rounded
-    CommandRunner --> Tools["Reek / Flog / Fasterer"]:::info
+    CommandRunner --> Tools["Reek / Flog / Fasterer / Debride"]:::info
 
     RunArtifacts --> Run["Run"]:::rounded
     Runner --> Run

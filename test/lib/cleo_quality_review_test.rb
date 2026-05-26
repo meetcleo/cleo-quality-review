@@ -13,8 +13,8 @@ module CleoQualityReview
     def test_gem_name_require_path_registers_default_checks
       checks = CheckRegistry.resolve(["all"])
 
-      assert_equal %w[reek flog fasterer], checks.map(&:check_name)
-      assert_equal %w[smell_detection complexity performance], checks.map(&:tool_type)
+      assert_equal %w[reek flog fasterer debride], checks.map(&:check_name)
+      assert_equal %w[smell_detection complexity performance dead_code], checks.map(&:tool_type)
     end
   end
 end

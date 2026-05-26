@@ -8,5 +8,6 @@ module CleoQualityReview
     require_relative "checks/reek"
     require_relative "checks/flog"
     require_relative "checks/fasterer"
+    require_relative "checks/debride"
   end
 end

@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "../../../test_helper"
+require "cleo_quality_review/checks/debride"
 require "cleo_quality_review/checks/fasterer"
 require "cleo_quality_review/checks/flog"
 require "cleo_quality_review/checks/reek"
@@ -61,6 +62,33 @@ module CleoQualityReview
         assert_equal "Use Hash#each_key instead of Hash#keys.each.", result.result
         assert_equal "lib/tasks/import.rake", result.filepath
         assert_equal 5, result.line
+      end
+
+      def test_debride_parser_normalizes_missing_methods
+        output = JSON.generate(
+          {
+            "missing" => {
+              "Example" => [["unused_method", "app/example.rb:17"]],
+            },
+          },
+        )
+
+        result = Debride.new(command_runner: runner(output), timestamp: 123).run(["app/example.rb"]).results.first
+
+        assert_equal "debride", result.tool_name
+        assert_equal "dead_code", result.tool_type
+        assert_equal "PotentialDeadMethod", result.check
+        assert_equal "Example#unused_method might not be called", result.result
+        assert_equal "app/example.rb", result.filepath
+        assert_equal 17, result.line
+      end
+
+      def test_debride_parser_ignores_empty_missing_output
+        output = JSON.generate("missing" => {})
+
+        results = Debride.new(command_runner: runner(output), timestamp: 123).run(["app/example.rb"]).results
+
+        assert_empty results
       end
 
       private
