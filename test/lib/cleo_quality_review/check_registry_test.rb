@@ -1,8 +1,7 @@
 # frozen_string_literal: true
 
 require_relative "../../test_helper"
-require "cleo_quality_review/checks/quality_check"
-require "cleo_quality_review/check_registry"
+require "cleo_quality_review/checks"
 
 module CleoQualityReview
   module Checks
@@ -12,18 +11,18 @@ module CleoQualityReview
 
   class CheckRegistryTest < Minitest::Test
     def setup
-      @original_registrations = CheckRegistry.instance_variable_get(:@registrations)
-      CheckRegistry.instance_variable_set(:@registrations, {})
+      @original_registrations = Registry.instance_variable_get(:@registrations)
+      Registry.instance_variable_set(:@registrations, {})
     end
 
     def teardown
-      CheckRegistry.instance_variable_set(:@registrations, @original_registrations)
+      Registry.instance_variable_set(:@registrations, @original_registrations)
     end
 
     def test_register_resolves_registered_class_name_with_metadata
-      CheckRegistry.register("Custom", "Checks::Custom", tool_type: :custom_type)
+      Registry.register("Custom", "Checks::Custom", tool_type: :custom_type)
 
-      check = CheckRegistry.resolve(["custom"]).first
+      check = Registry.resolve(["custom"]).first
 
       assert_equal Checks::Custom, check
       assert_equal "custom", check.check_name
@@ -34,7 +33,7 @@ module CleoQualityReview
     def test_defaults_to_all_checks
       register_default_checks
 
-      checks = CheckRegistry.resolve(["all"])
+      checks = Registry.resolve(["all"])
 
       assert_equal %w[reek flog fasterer debride], checks.map(&:check_name)
       assert_equal %w[smell_detection complexity performance dead_code], checks.map(&:tool_type)
@@ -43,7 +42,7 @@ module CleoQualityReview
     def test_resolves_repeated_comma_separated_checks
       register_default_checks
 
-      checks = CheckRegistry.resolve(["reek,flog", "reek"])
+      checks = Registry.resolve(["reek,flog", "reek"])
 
       assert_equal %w[reek flog], checks.map(&:check_name)
     end
@@ -53,7 +52,7 @@ module CleoQualityReview
 
       %w[fast-ruby fast_ruby].each do |alias_name|
         assert_raises(ArgumentError) do
-          CheckRegistry.resolve([alias_name])
+          Registry.resolve([alias_name])
         end
       end
     end
@@ -61,7 +60,7 @@ module CleoQualityReview
     def test_resolves_debride
       register_default_checks
 
-      checks = CheckRegistry.resolve(["debride"])
+      checks = Registry.resolve(["debride"])
 
       assert_equal ["debride"], checks.map(&:check_name)
       assert_equal ["dead_code"], checks.map(&:tool_type)
@@ -71,7 +70,7 @@ module CleoQualityReview
       register_default_checks
 
       error = assert_raises(ArgumentError) do
-        CheckRegistry.resolve(["missing"])
+        Registry.resolve(["missing"])
       end
       message = error.message
 

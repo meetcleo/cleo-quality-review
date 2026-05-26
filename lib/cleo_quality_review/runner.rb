@@ -3,9 +3,8 @@
 require "digest"
 require "json"
 
-require_relative "../cleo_quality_review"
 require_relative "changes_diff"
-require_relative "check_registry"
+require_relative "checks"
 require_relative "command_runner"
 require_relative "run"
 require_relative "run_artifacts"
@@ -36,7 +35,7 @@ module CleoQualityReview
     # @param [CommandRunner] command_runner for executing shell commands
     # @param [#now] clock time source for timestamps
     # @param [CheckRegistry] check_registry registry for resolving check names
-    def initialize(options:, command_runner: CommandRunner.new, clock: Time, check_registry: CheckRegistry.new)
+    def initialize(options:, command_runner: CommandRunner.new, clock: Time, check_registry: Registry.new)
       @options = options
       @command_runner = command_runner
       @clock = clock

@@ -3,7 +3,7 @@
 module CleoQualityReview
   ##
   # Registry for available quality check implementations
-  class CheckRegistry
+  class Registry
     class << self
       ##
       # Register a quality check implementation
