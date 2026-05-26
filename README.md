@@ -91,6 +91,7 @@ flowchart LR
     CLI --> Options["Options"]:::rounded
     CLI --> Runner["Runner"]:::accent
     CLI --> Formatter["Formatter"]:::accent
+    CLI --> GitHubReviewPublisher["GitHubReviewPublisher"]:::positive
     Options --> Runner
 
     Runner --> TargetResolver["TargetResolver"]:::rounded
@@ -109,18 +110,18 @@ flowchart LR
     Runner --> Run
 
     Formatter --> Run
-    Formatter --> Agent["Agent"]:::positive
-    Formatter --> GitHub["GitHub"]:::positive
-    Formatter --> Human["Human"]:::positive
-
-    Agent --> PromptLoader["PromptLoader"]:::neutral
-    GitHub --> PromptLoader
-    Human --> PromptLoader
-    Human --> PromptBuilder["PromptBuilder"]:::rounded
+    Formatter --> PromptLoader["PromptLoader"]:::neutral
+    Formatter --> PromptBuilder["PromptBuilder"]:::rounded
     PromptBuilder --> Run
     PromptBuilder --> RunArtifacts
-    Human --> LlmClient["LlmClient"]:::info
-    LlmClient --> OpenAI["OpenAI"]:::info
+    Formatter --> LlmClient["LlmClient"]:::info
+    LlmClient --> LlmConfig["LlmConfig"]:::neutral
+    LlmClient --> LlmProviderRegistry["LlmProviderRegistry"]:::rounded
+    LlmProviderRegistry --> OpenAiClient["OpenAiClient"]:::info
+    OpenAiClient --> OpenAI["OpenAI API"]:::info
+
+    GitHubReviewPublisher --> GitHubReviewBuilder["GitHubReviewBuilder"]:::rounded
+    GitHubReviewPublisher --> GitHubAPI["GitHub API"]:::info
 
     classDef rounded fill:#F8F6F2,stroke:#AC9B98,stroke-width:2px,color:#47201C,rx:10,ry:10
     classDef positive fill:#E6F2C9,stroke:#51623A,stroke-width:2px,color:#28371A,rx:10,ry:10
@@ -129,4 +130,4 @@ flowchart LR
     classDef neutral fill:#DAF0E5,stroke:#46635E,stroke-width:2px,color:#1D3733,rx:10,ry:10
 ```
 
-All formats build a prompt from the run data and artifacts, then send it through the configured LLM provider. The selected format determines which prompt is loaded and therefore the output shape.
+All formats build a prompt from the run data and artifacts, then send it through the configured LLM provider. The selected format determines which prompt is loaded and therefore the output shape. The `publish-pr-review` subcommand uses `GitHubReviewPublisher` to post rendered reviews directly to GitHub pull requests.
