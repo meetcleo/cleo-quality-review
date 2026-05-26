@@ -9,7 +9,7 @@ module CleoQualityReview
     ##
     # Quality check implementation for Debride unused-code analyzer
     class Debride < QualityCheck
-      self.check_name = "debride"
+      self.check_name = "dead_code"
       self.tool_name = "debride"
       self.output_extension = "json"
 
