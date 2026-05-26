@@ -51,12 +51,10 @@ module CleoQualityReview
     def test_rejects_dropped_fast_ruby_alias
       register_default_checks
 
-      assert_raises(ArgumentError) do
-        CheckRegistry.resolve(["fast-ruby"])
-      end
-
-      assert_raises(ArgumentError) do
-        CheckRegistry.resolve(["fast_ruby"])
+      %w[fast-ruby fast_ruby].each do |alias_name|
+        assert_raises(ArgumentError) do
+          CheckRegistry.resolve([alias_name])
+        end
       end
     end
 

@@ -12,6 +12,14 @@ module CleoQualityReview
   class RunArtifacts
     ROOT = "tmp/quality_checks"
     RawCheckOutput = Struct.new(:check_name, :tool_name, :tool_type, :extension, :path, :raw_output, keyword_init: true) do
+      def to_pair
+        [check_name, raw_output]
+      end
+
+      def to_record_pair
+        [check_name, self]
+      end
+
       def to_h
         {
           check_name: check_name,
@@ -131,14 +139,16 @@ module CleoQualityReview
     # Read all raw check outputs from the artifact directory
     # @return [Hash{String => String}] check name to output content mapping
     def raw_check_outputs
-      raw_check_output_records.to_h { |record| [record.check_name, record.raw_output] }
+      raw_check_output_records.to_h(&:to_pair)
     end
 
     ##
     # Read all raw check outputs with metadata from the artifact directory
     # @return [Array<RawCheckOutput>]
     def raw_check_output_records
-      legacy_raw_check_output_records + typed_raw_check_output_records
+      records_by_check_name = legacy_raw_check_output_records.to_h(&:to_record_pair)
+      records_by_check_name.merge!(typed_raw_check_output_records.to_h(&:to_record_pair))
+      records_by_check_name.values
     end
 
     ##
@@ -211,7 +221,6 @@ module CleoQualityReview
         raw_check_output_record(
           filepath: filepath,
           check_name: check_name,
-          tool_name: check_name,
           tool_type: tool_type,
         )
       end
@@ -224,16 +233,15 @@ module CleoQualityReview
         raw_check_output_record(
           filepath: filepath,
           check_name: check_name,
-          tool_name: check_name,
           tool_type: nil,
         )
       end
     end
 
-    def raw_check_output_record(filepath:, check_name:, tool_name:, tool_type:)
+    def raw_check_output_record(filepath:, check_name:, tool_type:)
       RawCheckOutput.new(
         check_name: check_name,
-        tool_name: tool_name,
+        tool_name: check_name,
         tool_type: tool_type,
         extension: File.extname(filepath).delete_prefix("."),
         path: filepath,

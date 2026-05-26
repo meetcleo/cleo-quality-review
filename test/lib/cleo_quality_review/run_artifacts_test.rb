@@ -15,8 +15,9 @@ module CleoQualityReview
           changes_diff: "diff content",
         ).prepare!
 
-        assert_equal "tmp/quality_checks/review-id", artifacts.to_s
-        assert_path_exists File.join(artifacts.to_s, "changes.diff")
+        artifacts_path = artifacts.to_s
+        assert_equal "tmp/quality_checks/review-id", artifacts_path
+        assert_path_exists File.join(artifacts_path, "changes.diff")
         assert_equal "diff content", artifacts.changes_diff
       end
     end
@@ -45,34 +46,21 @@ module CleoQualityReview
 
     def test_writes_check_output_under_tool_type_directory
       in_tmpdir do
-        artifacts = RunArtifacts.new(
-          review_id: "review-id",
-          timestamp: 123,
-          target_files: [],
-          changes_diff: "diff",
-        ).prepare!
+        artifacts = prepared_artifacts(target_files: [])
+        artifacts.write_check_output(reek_check_output)
 
-        check_output = Checks::CheckOutput.new(
-          check_name: "reek",
-          tool_name: "reek",
-          tool_type: "smell_detection",
-          extension: "json",
-          raw_output: "[]",
-          results: [],
-        )
-        artifacts.write_check_output(check_output)
+        assert_typed_reek_output(artifacts)
+      end
+    end
 
-        expected_path = "tmp/quality_checks/review-id/smell_detection/reek/raw_output.json"
-        record = artifacts.raw_check_output_records.first
+    def test_prefers_typed_check_output_over_legacy_duplicate
+      in_tmpdir do
+        artifacts = prepared_artifacts(target_files: [])
+        write_legacy_reek_output("stale")
+        artifacts.write_check_output(reek_check_output(raw_output: "fresh"))
 
-        assert_path_exists expected_path
-        assert_equal "reek", record.check_name
-        assert_equal "reek", record.tool_name
-        assert_equal "smell_detection", record.tool_type
-        assert_equal "json", record.extension
-        assert_equal expected_path, record.path
-        assert_equal "[]", record.raw_output
-        assert_equal({ "reek" => "[]" }, artifacts.raw_check_outputs)
+        assert_equal 1, artifacts.raw_check_output_records.length
+        assert_typed_reek_output(artifacts, raw_output: "fresh")
       end
     end
 
@@ -126,13 +114,51 @@ module CleoQualityReview
       assert_equal "message", message
     end
 
-    def prepared_artifacts
+    def prepared_artifacts(target_files: ["app/example.rb"], changes_diff: "diff")
       RunArtifacts.new(
         review_id: "review-id",
         timestamp: 123,
-        target_files: ["app/example.rb"],
-        changes_diff: "diff",
+        target_files: target_files,
+        changes_diff: changes_diff,
       ).prepare!
+    end
+
+    def reek_check_output(raw_output: "[]")
+      Checks::CheckOutput.new(
+        check_name: "reek",
+        tool_name: "reek",
+        tool_type: "smell_detection",
+        extension: "json",
+        raw_output: raw_output,
+        results: [],
+      )
+    end
+
+    def write_legacy_reek_output(raw_output)
+      FileUtils.mkdir_p("tmp/quality_checks/review-id/reek")
+      File.write("tmp/quality_checks/review-id/reek/raw_output.json", raw_output)
+    end
+
+    def assert_typed_reek_output(artifacts, raw_output: "[]")
+      expected_path = "tmp/quality_checks/review-id/smell_detection/reek/raw_output.json"
+
+      assert_path_exists expected_path
+      assert_raw_check_output_record(artifacts.raw_check_output_records.first, expected_path, raw_output)
+      assert_equal({ "reek" => raw_output }, artifacts.raw_check_outputs)
+    end
+
+    def assert_raw_check_output_record(record, expected_path, raw_output)
+      assert_equal(
+        {
+          check_name: "reek",
+          tool_name: "reek",
+          tool_type: "smell_detection",
+          extension: "json",
+          path: expected_path,
+          raw_output: raw_output,
+        },
+        record.to_h,
+      )
     end
 
     def completed_run(artifacts)

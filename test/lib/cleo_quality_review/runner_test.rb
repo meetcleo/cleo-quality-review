@@ -253,9 +253,10 @@ module CleoQualityReview
       assert_equal ["app/example.rb"], run.target_files
       assert_equal ["fake"], run.checks
       assert_equal ["fake"], check_registry.received_checks
-      assert_equal "fake result", run.results.first.result
-      assert_equal "fake", run.results.first.tool_name
-      assert_equal "custom", run.results.first.tool_type
+      result = run.results.first
+      assert_equal "fake result", result.result
+      assert_equal "fake", result.tool_name
+      assert_equal "custom", result.tool_type
       assert_equal review_id, run.review_id
       assert_artifacts_written(review_id)
       assert_equal "", run.artifacts.raw_check_outputs.fetch("fake")
