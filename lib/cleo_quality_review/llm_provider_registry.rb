@@ -29,9 +29,9 @@ module CleoQualityReview
       # @raise [UnsupportedLlmProviderError] if provider not found
       def fetch(name)
         key = name.to_s.downcase
-        providers.fetch(key) do
-          raise UnsupportedLlmProviderError, "Unsupported LLM provider #{name.inspect}. Available: #{providers.keys.sort.join(', ')}"
-        end
+        CleoQualityReview.const_get(providers.fetch(key)).new
+      rescue NameError
+        raise UnsupportedLlmProviderError, "Unsupported LLM provider #{name.inspect}. Available: #{providers.keys.sort.join(', ')}"
       end
 
       ##
@@ -43,11 +43,7 @@ module CleoQualityReview
       private
 
       def providers
-        @providers ||= default_providers
-      end
-
-      def default_providers
-        { "openai" => OpenAiLlmProvider.new }
+        @providers ||= {}
       end
     end
   end
