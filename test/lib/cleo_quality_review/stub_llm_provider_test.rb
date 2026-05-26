@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "../../test_helper"
-require "cleo_quality_review/stub_llm_provider"
-require "cleo_quality_review/llm_config"
+require "test_helper"
 
 module CleoQualityReview
   class StubLlmProviderTest < Minitest::Test

@@ -15,10 +15,20 @@ module CleoQualityReview
       ##
       # Register a new check for use
       # @param [String] tool_name
-      # @param [String, Symbol] tool_class_name
+      # @param [Class] tool_class
       # @param [String, Symbol] tool_type
-      def register(tool_name, tool_class_name, tool_type: )
-        Registry.register(tool_name.to_s, tool_class_name.to_s, tool_type: tool_type.to_s)
+      # @return [nil]
+      def register(tool_name, tool_class, tool_type: )
+        Registry.register(tool_name.to_s, tool_class, tool_type: tool_type.to_s)
+      end
+
+      ##
+      # Has a tool with the given name been registered?
+      #
+      # @param [String] tool_name
+      # @return [Boolean]
+      def registered?(tool_name)
+        Registry.registered?(tool_name)
       end
     end
   end

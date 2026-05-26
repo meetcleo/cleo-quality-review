@@ -3,6 +3,8 @@
 ##
 # Quality review tool for Ruby code analysis
 module CleoQualityReview
+  class Error < StandardError;end
+
   require_relative "cleo_quality_review/version"
   require_relative "cleo_quality_review/checks"
   require_relative "cleo_quality_review/llm_provider_registry"
