@@ -17,6 +17,10 @@ Reek:
 Fasterer:
   Severity: Low
 
+Debride:
+  Severity: Low
+  Notes: Lower-confidence static dead-code signal. Only report when the finding is specific, actionable, and unlikely to be a dynamic Rails call.
+
 
 You MUST NOT return so many items that the feedback is noisy and confusing. Limit yourself to maximum 10 comments.
 

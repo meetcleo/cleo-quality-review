@@ -10,4 +10,5 @@ module CleoQualityReview
   CheckRegistry.register("Reek", "Checks::Reek", tool_type: :smell_detection)
   CheckRegistry.register("Flog", "Checks::Flog", tool_type: :complexity)
   CheckRegistry.register("Fasterer", "Checks::Fasterer", tool_type: :performance)
+  CheckRegistry.register("Debride", "Checks::Debride", tool_type: :dead_code)
 end

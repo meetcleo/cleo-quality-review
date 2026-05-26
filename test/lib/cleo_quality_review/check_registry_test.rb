@@ -36,8 +36,8 @@ module CleoQualityReview
 
       checks = CheckRegistry.resolve(["all"])
 
-      assert_equal %w[reek flog fasterer], checks.map(&:check_name)
-      assert_equal %w[smell_detection complexity performance], checks.map(&:tool_type)
+      assert_equal %w[reek flog fasterer debride], checks.map(&:check_name)
+      assert_equal %w[smell_detection complexity performance dead_code], checks.map(&:tool_type)
     end
 
     def test_resolves_repeated_comma_separated_checks
@@ -58,6 +58,15 @@ module CleoQualityReview
       end
     end
 
+    def test_resolves_debride
+      register_default_checks
+
+      checks = CheckRegistry.resolve(["debride"])
+
+      assert_equal ["debride"], checks.map(&:check_name)
+      assert_equal ["dead_code"], checks.map(&:tool_type)
+    end
+
     def test_rejects_unknown_checks
       register_default_checks
 
@@ -67,7 +76,7 @@ module CleoQualityReview
       message = error.message
 
       assert_includes message, 'Unknown check "missing"'
-      assert_includes message, "Expected one of: reek, flog, fasterer, all"
+      assert_includes message, "Expected one of: reek, flog, fasterer, debride, all"
     end
 
     private

@@ -7,6 +7,7 @@ Analyze the raw tool outputs and git diff provided. Prioritize actionable issues
 - **Flog**: Ignore scores below 40.0
 - **Reek**: Focus on FeatureEnvy, TooManyStatements, DuplicateMethodCall, NestedIterators, LongParameterList
 - **Fasterer**: Include all performance suggestions
+- **Debride**: Treat as lower-confidence static dead-code detection. Include only findings that are clearly actionable and avoid recommending deletion without checking dynamic call paths.
 
 ## Output Format
 
@@ -20,8 +21,8 @@ Output valid JSON matching this exact schema:
     "target_files": [<file paths from metadata>],
     "findings": [
       {
-        "tool_name": "<reek|flog|fasterer>",
-        "tool_type": "<smell_detection|complexity|performance>",
+        "tool_name": "<reek|flog|fasterer|debride>",
+        "tool_type": "<smell_detection|complexity|performance|dead_code>",
         "check": "<specific check type>",
         "filepath": "<relative file path>",
         "line": <line number or null>,
@@ -32,8 +33,8 @@ Output valid JSON matching this exact schema:
   "check_outputs": [
     {
       "check_name": "<check name>",
-      "tool_name": "<reek|flog|fasterer>",
-      "tool_type": "<smell_detection|complexity|performance>",
+      "tool_name": "<reek|flog|fasterer|debride>",
+      "tool_type": "<smell_detection|complexity|performance|dead_code>",
       "extension": "<json|txt>",
       "path": "<raw output artifact path>",
       "raw_output": "<raw tool output>"
