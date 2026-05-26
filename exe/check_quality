@@ -8,8 +8,13 @@ require "cleo_quality_review/cli"
 # Load development environment variables
 # This should not be used when packaging in production
 if ENV.fetch('CLEO_QUALITY_REVIEW_DEV', 'false') == 'true'
-  require 'dotenv'
-  Dotenv.load(".env.development.local")
+  begin
+    require 'dotenv'
+    local_dotenv = File.expand_path("../.env.development.local", __dir__)
+    Dotenv.load(local_dotenv)
+  rescue LoadError
+    puts "No local .env.development found. Skip."
+  end
 end
 
 exit CleoQualityReview::CLI.new(ARGV).run
