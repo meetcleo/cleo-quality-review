@@ -3,6 +3,7 @@
 require "digest"
 require "json"
 
+require_relative "../cleo_quality_review"
 require_relative "changes_diff"
 require_relative "check_registry"
 require_relative "command_runner"
@@ -129,6 +130,8 @@ module CleoQualityReview
       check_outputs.each do |output|
         artifacts.write_check_output(
           check_name: output.check_name,
+          tool_name: output.tool_name,
+          tool_type: output.tool_type,
           extension: output.extension,
           output: output.raw_output,
         )

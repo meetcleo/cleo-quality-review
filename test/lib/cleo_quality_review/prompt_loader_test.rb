@@ -30,5 +30,12 @@ module CleoQualityReview
         assert_includes PromptLoader.load(format: "github"), "GitHub Actions automation pipeline"
       end
     end
+
+    def test_agent_prompt_schema_uses_tool_name_and_tool_type
+      prompt = PromptLoader.load(format: "agent")
+
+      assert_includes prompt, '"tool_name": "<reek|flog|fasterer>"'
+      assert_includes prompt, '"tool_type": "<smell_detection|complexity|performance>"'
+    end
   end
 end

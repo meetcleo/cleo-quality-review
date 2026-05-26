@@ -10,7 +10,7 @@ module CleoQualityReview
     # Quality check implementation for Reek code smell detector
     class Reek < QualityCheck
       self.check_name = "reek"
-      self.tool = "reek"
+      self.tool_name = "reek"
       self.output_extension = "json"
 
       private

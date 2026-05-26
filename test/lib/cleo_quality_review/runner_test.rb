@@ -40,7 +40,8 @@ module CleoQualityReview
 
     FakeCheck = Class.new(Checks::QualityCheck) do
       self.check_name = "fake"
-      self.tool = "fake"
+      self.tool_name = "fake"
+      self.tool_type = "custom"
 
       private
 
@@ -62,7 +63,8 @@ module CleoQualityReview
 
     OtherFakeCheck = Class.new(Checks::QualityCheck) do
       self.check_name = "other"
-      self.tool = "other"
+      self.tool_name = "other"
+      self.tool_type = "custom"
 
       private
 
@@ -252,6 +254,8 @@ module CleoQualityReview
       assert_equal ["fake"], run.checks
       assert_equal ["fake"], check_registry.received_checks
       assert_equal "fake result", run.results.first.result
+      assert_equal "fake", run.results.first.tool_name
+      assert_equal "custom", run.results.first.tool_type
       assert_equal review_id, run.review_id
       assert_artifacts_written(review_id)
       assert_equal "", run.artifacts.raw_check_outputs.fetch("fake")
@@ -278,7 +282,7 @@ module CleoQualityReview
 
     def assert_artifacts_written(review_id)
       assert_equal diff_content, File.read("tmp/quality_checks/#{review_id}/changes.diff")
-      assert_equal "", File.read("tmp/quality_checks/#{review_id}/fake/raw_output.txt")
+      assert_equal "", File.read("tmp/quality_checks/#{review_id}/custom/fake/raw_output.txt")
       assert_path_exists "tmp/quality_checks/#{review_id}/complete.json"
       assert_path_exists "tmp/quality_checks/#{review_id}/manifest.json"
       assert_path_exists "tmp/quality_checks/#{review_id}/results.json"

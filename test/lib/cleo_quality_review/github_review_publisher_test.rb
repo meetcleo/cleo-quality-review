@@ -113,7 +113,7 @@ module CleoQualityReview
         checks: ["reek"],
         target_files: ["app/example.rb"],
         results: [
-          Result.new(tool: "reek", check: "DuplicateMethodCall", timestamp: 123, result: "call repeated", filepath: "app/example.rb", line: 2),
+          Result.new(tool_name: "reek", tool_type: "smell_detection", check: "DuplicateMethodCall", timestamp: 123, result: "call repeated", filepath: "app/example.rb", line: 2),
         ],
         artifacts: artifacts,
       )

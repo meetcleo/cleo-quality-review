@@ -11,6 +11,18 @@ module CleoQualityReview
   # Manages artifacts produced during a quality review run
   class RunArtifacts
     ROOT = "tmp/quality_checks"
+    RawCheckOutput = Struct.new(:check_name, :tool_name, :tool_type, :extension, :path, :raw_output, keyword_init: true) do
+      def to_h
+        {
+          check_name: check_name,
+          tool_name: tool_name,
+          tool_type: tool_type,
+          extension: extension,
+          path: path,
+          raw_output: raw_output,
+        }.compact
+      end
+    end
 
     ##
     # @param [String] review_id deterministic identifier for the reviewed diff
@@ -51,11 +63,13 @@ module CleoQualityReview
     ##
     # Write raw check output to a file
     # @param [String] check_name name of the check
+    # @param [String] tool_name name of the concrete tool
+    # @param [String] tool_type category of tool findings
     # @param [String] extension file extension for the output
     # @param [String] output raw check output content
     # @return [void]
-    def write_check_output(check_name:, extension:, output:)
-      check_path = File.join(path, check_name)
+    def write_check_output(check_name:, tool_name:, tool_type:, extension:, output:)
+      check_path = check_output_path(check_name: check_name, tool_type: tool_type)
       FileUtils.mkdir_p(check_path)
       File.write(File.join(check_path, "raw_output.#{extension}"), output)
     end
@@ -118,10 +132,14 @@ module CleoQualityReview
     # Read all raw check outputs from the artifact directory
     # @return [Hash{String => String}] check name to output content mapping
     def raw_check_outputs
-      Dir.glob(File.join(path, "*", "raw_output.*")).sort.to_h do |filepath|
-        check_name = File.basename(File.dirname(filepath))
-        [check_name, File.read(filepath, invalid: :replace, undef: :replace)]
-      end
+      raw_check_output_records.to_h { |record| [record.check_name, record.raw_output] }
+    end
+
+    ##
+    # Read all raw check outputs with metadata from the artifact directory
+    # @return [Array<RawCheckOutput>]
+    def raw_check_output_records
+      legacy_raw_check_output_records + typed_raw_check_output_records
     end
 
     ##
@@ -150,6 +168,13 @@ module CleoQualityReview
       File.join(path, "complete.json")
     end
 
+    def check_output_path(check_name:, tool_type:)
+      normalized_tool_type = tool_type.to_s.strip
+      return File.join(path, check_name) if normalized_tool_type.empty?
+
+      File.join(path, normalized_tool_type, check_name)
+    end
+
     def write_changes_diff
       File.write(changes_diff_path, changes_diff_content.to_s)
     end
@@ -168,12 +193,51 @@ module CleoQualityReview
 
     def result_from_hash(hash)
       Result.new(
-        tool: hash["tool"],
+        tool_name: hash["tool_name"] || hash["tool"],
+        tool_type: hash["tool_type"],
         check: hash["check"],
         timestamp: hash["timestamp"],
         result: hash["result"],
         filepath: hash["filepath"],
         line: hash["line"],
+      )
+    end
+
+    def typed_raw_check_output_records
+      Dir.glob(File.join(path, "*", "*", "raw_output.*")).sort.map do |filepath|
+        check_name = File.basename(File.dirname(filepath))
+        tool_type = File.basename(File.dirname(File.dirname(filepath)))
+
+        raw_check_output_record(
+          filepath: filepath,
+          check_name: check_name,
+          tool_name: check_name,
+          tool_type: tool_type,
+        )
+      end
+    end
+
+    def legacy_raw_check_output_records
+      Dir.glob(File.join(path, "*", "raw_output.*")).sort.map do |filepath|
+        check_name = File.basename(File.dirname(filepath))
+
+        raw_check_output_record(
+          filepath: filepath,
+          check_name: check_name,
+          tool_name: check_name,
+          tool_type: nil,
+        )
+      end
+    end
+
+    def raw_check_output_record(filepath:, check_name:, tool_name:, tool_type:)
+      RawCheckOutput.new(
+        check_name: check_name,
+        tool_name: tool_name,
+        tool_type: tool_type,
+        extension: File.extname(filepath).delete_prefix("."),
+        path: filepath,
+        raw_output: File.read(filepath, invalid: :replace, undef: :replace),
       )
     end
   end

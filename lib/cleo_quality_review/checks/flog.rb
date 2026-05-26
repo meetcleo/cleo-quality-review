@@ -8,7 +8,7 @@ module CleoQualityReview
     # Quality check implementation for Flog complexity analyzer
     class Flog < QualityCheck
       self.check_name = "flog"
-      self.tool = "flog"
+      self.tool_name = "flog"
 
       private
 

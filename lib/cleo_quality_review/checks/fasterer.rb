@@ -8,7 +8,7 @@ module CleoQualityReview
     # Quality check implementation for Fasterer performance analyzer
     class Fasterer < QualityCheck
       self.check_name = "fasterer"
-      self.tool = "fasterer"
+      self.tool_name = "fasterer"
 
       private
 

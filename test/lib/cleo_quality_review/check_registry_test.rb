@@ -1,30 +1,78 @@
 # frozen_string_literal: true
 
 require_relative "../../test_helper"
+require "cleo_quality_review/checks/quality_check"
 require "cleo_quality_review/check_registry"
 
 module CleoQualityReview
+  module Checks
+    class Custom < QualityCheck
+    end
+  end
+
   class CheckRegistryTest < Minitest::Test
+    def setup
+      @original_registrations = CheckRegistry.instance_variable_get(:@registrations)
+      CheckRegistry.instance_variable_set(:@registrations, {})
+    end
+
+    def teardown
+      CheckRegistry.instance_variable_set(:@registrations, @original_registrations)
+    end
+
+    def test_register_resolves_registered_class_name_with_metadata
+      CheckRegistry.register("Custom", "Checks::Custom", tool_type: :custom_type)
+
+      check = CheckRegistry.resolve(["custom"]).first
+
+      assert_equal Checks::Custom, check
+      assert_equal "custom", check.check_name
+      assert_equal "custom", check.tool_name
+      assert_equal "custom_type", check.tool_type
+    end
+
     def test_defaults_to_all_checks
+      register_default_checks
+
       assert_equal %w[reek flog fasterer], CheckRegistry.resolve(["all"]).map(&:check_name)
+      assert_equal %w[smell_detection complexity performance], CheckRegistry.resolve(["all"]).map(&:tool_type)
     end
 
     def test_resolves_repeated_comma_separated_checks
+      register_default_checks
+
       checks = CheckRegistry.resolve(["reek,flog", "reek"])
 
       assert_equal %w[reek flog], checks.map(&:check_name)
     end
 
-    def test_resolves_fast_ruby_alias
-      assert_equal ["fasterer"], CheckRegistry.resolve(["fast-ruby"]).map(&:check_name)
+    def test_rejects_dropped_fast_ruby_alias
+      register_default_checks
+
+      assert_raises(ArgumentError) do
+        CheckRegistry.resolve(["fast-ruby"])
+      end
+
+      assert_raises(ArgumentError) do
+        CheckRegistry.resolve(["fast_ruby"])
+      end
     end
 
     def test_rejects_unknown_checks
+      register_default_checks
+
       error = assert_raises(ArgumentError) do
         CheckRegistry.resolve(["missing"])
       end
 
       assert_includes error.message, 'Unknown check "missing"'
+      assert_includes error.message, "Expected one of: reek, flog, fasterer, all"
+    end
+
+    private
+
+    def register_default_checks
+      load File.expand_path("../../../lib/cleo_quality_review.rb", __dir__)
     end
   end
 end
