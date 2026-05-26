@@ -13,7 +13,11 @@ module CleoQualityReview
   ##
   # Command-line interface entry point
   class CLI
-    SUBCOMMANDS = %w[analyze render publish-pr-review].freeze
+    SUBCOMMANDS = {
+      "analyze" => :run_analyze,
+      "render" => :run_render,
+      "publish-pr-review" => :run_publish_pr_review,
+    }.freeze
 
     ##
     # @param [Array<String>] argv command-line arguments
@@ -30,70 +34,64 @@ module CleoQualityReview
     # @return [Integer] exit code (0 for success, 1 for error)
     def run
       dispatch_command
-    rescue Error, OptionParser::ParseError, ArgumentError => e
-      stderr.puts("check_quality: #{e.message}")
+    rescue Error, OptionParser::ParseError, ArgumentError => error
+      stderr.puts("check_quality: #{error.message}")
       1
     end
 
     private
 
     def dispatch_command
-      command_runner = CommandRunner.new
+      @command_runner = CommandRunner.new
       command = argv.first
+      subcommand = SUBCOMMANDS[command]
 
-      if SUBCOMMANDS.include?(command)
-        run_subcommand(command, argv.drop(1), command_runner)
+      if subcommand
+        run_subcommand(subcommand, argv.drop(1))
       else
-        run_one_shot(argv, command_runner)
+        run_one_shot(argv)
       end
     end
 
-    attr_reader :argv, :stdout, :stderr
+    attr_reader :argv, :stdout, :stderr, :command_runner
 
-    def run_one_shot(arguments, command_runner)
+    def run_one_shot(arguments)
       options = Options.parse(arguments)
       run = Runner.new(options: options, command_runner: command_runner).run
       output = Formatter.new(run: run, command_runner: command_runner).format
-      stdout.puts(output) unless output.empty?
+      print_output(output)
       0
     end
 
-    def run_subcommand(command, arguments, command_runner)
-      case command
-      when "analyze"
-        run_analyze(arguments, command_runner)
-      when "render"
-        run_render(arguments, command_runner)
-      when "publish-pr-review"
-        run_publish_pr_review(arguments)
-      end
+    def run_subcommand(subcommand, arguments)
+      send(subcommand, arguments)
     end
 
-    def run_analyze(arguments, command_runner)
+    def run_analyze(arguments)
       options = Options.parse(arguments)
       run = Runner.new(options: options, command_runner: command_runner).run
       stdout.puts(run.review_id)
       0
     end
 
-    def run_render(arguments, command_runner)
+    def run_render(arguments)
       options = Options.parse(arguments)
-      run = load_run(options)
+      run = RunArtifacts.load(review_id: options.validated_review_id).to_run(**options.run_loading_params)
       output = Formatter.new(run: run, command_runner: command_runner).format
-      stdout.puts(output) unless output.empty?
+      print_output(output)
       0
     end
 
     def run_publish_pr_review(arguments)
       options = Options.parse(arguments)
-      run = load_run(options)
+      run = RunArtifacts.load(review_id: options.validated_review_id).to_run(**options.run_loading_params)
       output = GitHubReviewPublisher.new(run: run, rendered_review: rendered_pr_review(options, run)).publish
-      stdout.puts(output) unless output.empty?
+      print_output(output)
       0
     end
 
-    def load_run(options)
-      RunArtifacts.load(review_id: options.validated_review_id).to_run(**options.run_loading_params)
+    def print_output(output)
+      stdout.puts(output) unless output.empty?
     end
 
     def rendered_pr_review(options, run)

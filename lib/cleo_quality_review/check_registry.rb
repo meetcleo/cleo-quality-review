@@ -58,38 +58,21 @@ module CleoQualityReview
     # @return [Array<Class>] resolved check classes
     # @raise [ArgumentError] if an unknown check name is provided
     def resolve(names)
-      normalized = normalize_names(names)
-      return registrations.values if all_checks_requested?(normalized)
+      normalized = names.map(&:to_s).join(",").split(",").map(&:strip).map(&:downcase).reject(&:empty?)
+      return registrations.values if normalized.empty? || normalized.include?("all")
 
       fetch_checks(normalized)
     end
 
     private
 
-    def all_checks_requested?(normalized)
-      normalized.empty? || normalized.include?("all")
-    end
-
     def fetch_checks(normalized)
       normalized.map { |name| fetch_check(name) }.uniq
-    end
-
-    def normalize_names(names)
-      names.flat_map { |name| normalize_list_item(name) }
     end
 
     def fetch_check(name)
       registrations.fetch(name) do
         raise ArgumentError, "Unknown check #{name.inspect}. Expected one of: #{registrations.keys.join(', ')}, all"
-      end
-    end
-
-    def normalize_list_item(name)
-      name.to_s.split(",").filter_map do |part|
-        normalized = part.strip.downcase
-        next if normalized.empty?
-
-        normalized
       end
     end
 
