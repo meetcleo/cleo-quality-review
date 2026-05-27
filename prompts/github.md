@@ -25,3 +25,5 @@ Debride:
 You MUST NOT return so many items that the feedback is noisy and confusing. Limit yourself to maximum 10 comments.
 
 You MUST return your feedback in the Github Workflow Annotations format, as described on their website. (You can use this link as a source if you need to: https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands).
+
+You SHOULD group feedback from the various tools in the Github workflow logs using the `::group::{title}` ...`::endgroup::` notation.
