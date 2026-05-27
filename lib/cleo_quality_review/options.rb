@@ -2,6 +2,8 @@
 
 require "optparse"
 
+require_relative "git_diff_base"
+
 module CleoQualityReview
   ##
   # Parses command-line options for the quality review CLI
@@ -23,7 +25,7 @@ module CleoQualityReview
     #   @return [Array<String>] checks to exclude
     # @!attribute [r] changed
     #   @return [Boolean] whether to filter to changed files only
-    ParseResult = Struct.new(:format, :checks, :files, :exclude, :changed, :log, :review_id, :review_file, keyword_init: true) do
+    ParseResult = Struct.new(:format, :checks, :files, :exclude, :changed, :base, :log, :review_id, :review_file, keyword_init: true) do
       ##
       # @return [String] validated review_id
       # @raise [OptionParser::MissingArgument] if review_id is blank
@@ -58,6 +60,7 @@ module CleoQualityReview
       @files = []
       @exclude = []
       @changed = false
+      @base = GitDiffBase::DEFAULT_BASE_REF
       @log = false
       @review_id = nil
       @review_file = nil
@@ -78,6 +81,7 @@ module CleoQualityReview
         files: files,
         exclude: exclude,
         changed: changed,
+        base: base,
         log: log,
         review_id: review_id,
         review_file: review_file,
@@ -86,7 +90,7 @@ module CleoQualityReview
 
     private
 
-    attr_reader :argv, :format, :checks, :files, :exclude, :changed, :log, :review_id, :review_file
+    attr_reader :argv, :format, :checks, :files, :exclude, :changed, :base, :log, :review_id, :review_file
 
     def parser
       OptionParser.new do |opts|
@@ -132,8 +136,12 @@ module CleoQualityReview
         files.concat(values)
       end
 
-      opts.on("--changed", "Only check files changed from main branch") do
+      opts.on("--changed", "Only check files changed from the base ref") do
         @changed = true
+      end
+
+      opts.on("--base REF", "Git ref to compare changed files against") do |value|
+        @base = value
       end
     end
 

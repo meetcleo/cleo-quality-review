@@ -229,6 +229,70 @@ module CleoQualityReview
       end
     end
 
+    def test_custom_base_ref_is_included_in_non_default_review_id
+      in_tmpdir do
+        FileUtils.mkdir_p("app")
+        File.write("app/example.rb", "# frozen_string_literal: true\n")
+
+        command_runner = FakeCommandRunner.new(calls: [])
+        diff = diff_content
+        command_runner.define_singleton_method(:run) do |*command, env: {}|
+          calls << command
+          case command
+          when ["git", "merge-base", "origin/feature-branch", "HEAD"]
+            CleoQualityReview::CommandResult.new(stdout: "feature-base\n", stderr: "", status: CleoQualityReviewTestHelpers::Status.new(true))
+          when ["git", "diff", "--name-only", "--diff-filter=ACMRT", "feature-base"]
+            CleoQualityReview::CommandResult.new(stdout: "app/example.rb\n", stderr: "", status: CleoQualityReviewTestHelpers::Status.new(true))
+          when ["git", "ls-files", "--others", "--exclude-standard"]
+            CleoQualityReview::CommandResult.new(stdout: "", stderr: "", status: CleoQualityReviewTestHelpers::Status.new(true))
+          when ["git", "diff", "feature-base", "--", "app/example.rb"]
+            CleoQualityReview::CommandResult.new(stdout: diff, stderr: "", status: CleoQualityReviewTestHelpers::Status.new(true))
+          when ["git", "ls-files", "--others", "--exclude-standard", "--", "app/example.rb"]
+            CleoQualityReview::CommandResult.new(stdout: "", stderr: "", status: CleoQualityReviewTestHelpers::Status.new(true))
+          else
+            CleoQualityReview::CommandResult.new(stdout: "", stderr: "", status: CleoQualityReviewTestHelpers::Status.new(true))
+          end
+        end
+
+        run = Runner.new(
+          options: Options::ParseResult.new(format: "agent", checks: ["fake"], files: [], exclude: [], changed: true, base: "origin/feature-branch"),
+          command_runner: command_runner,
+          clock: FakeClock.new(now: Time.at(123)),
+          check_registry: FakeCheckRegistry.new,
+        ).run
+
+        assert_equal "origin/feature-branch", run.base_ref
+        assert_equal expected_review_id(base_ref: "origin/feature-branch"), run.review_id
+      end
+    end
+
+    def test_unresolved_changed_mode_base_ref_fails_before_artifacts_complete
+      in_tmpdir do
+        command_runner = FakeCommandRunner.new(calls: [])
+        command_runner.define_singleton_method(:run) do |*command, env: {}|
+          calls << command
+          case command
+          when ["git", "merge-base", "origin/missing", "HEAD"]
+            CleoQualityReview::CommandResult.new(stdout: "", stderr: "fatal\n", status: CleoQualityReviewTestHelpers::Status.new(false))
+          else
+            CleoQualityReview::CommandResult.new(stdout: "", stderr: "", status: CleoQualityReviewTestHelpers::Status.new(true))
+          end
+        end
+
+        error = assert_raises(ArgumentError) do
+          Runner.new(
+            options: Options::ParseResult.new(format: "agent", checks: ["fake"], files: [], exclude: [], changed: true, base: "origin/missing"),
+            command_runner: command_runner,
+            clock: FakeClock.new(now: Time.at(123)),
+            check_registry: FakeCheckRegistry.new,
+          ).run
+        end
+
+        assert_equal "Could not resolve quality review base ref: origin/missing", error.message
+        refute_path_exists "tmp/quality_checks"
+      end
+    end
+
     def test_cache_key_includes_selected_checks
       in_tmpdir do
         FileUtils.mkdir_p("app")
@@ -289,8 +353,11 @@ module CleoQualityReview
       assert_path_exists "tmp/quality_checks/#{review_id}/results.json"
     end
 
-    def expected_review_id(checks: ["fake"], diff: diff_content)
-      Digest::SHA256.hexdigest(JSON.generate(diff: diff, checks: checks.sort))
+    def expected_review_id(checks: ["fake"], diff: diff_content, base_ref: "origin/main")
+      payload = { diff: diff, checks: checks.sort }
+      payload[:base_ref] = base_ref unless base_ref == "origin/main"
+
+      Digest::SHA256.hexdigest(JSON.generate(payload))
     end
 
     def diff_content

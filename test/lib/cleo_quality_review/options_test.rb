@@ -72,10 +72,22 @@ module CleoQualityReview
       assert_predicate options, :changed
     end
 
+    def test_parses_base_ref
+      options = Options.parse(["--base", "origin/feature-branch"])
+
+      assert_equal "origin/feature-branch", options.base
+    end
+
     def test_changed_defaults_to_false
       options = Options.parse([])
 
       refute_predicate options, :changed
+    end
+
+    def test_base_defaults_to_origin_main
+      options = Options.parse([])
+
+      assert_equal "origin/main", options.base
     end
 
     def test_exclude_defaults_to_empty_array

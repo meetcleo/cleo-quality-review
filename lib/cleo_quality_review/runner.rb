@@ -6,6 +6,7 @@ require "json"
 require_relative "changes_diff"
 require_relative "checks"
 require_relative "command_runner"
+require_relative "git_diff_base"
 require_relative "run"
 require_relative "run_artifacts"
 require_relative "target_resolver"
@@ -16,12 +17,13 @@ module CleoQualityReview
   class Runner
     ##
     # Grouped values resolved at the start of an analysis run
-    AnalysisContext = Struct.new(:timestamp, :target, :changes, :review_id, :check_classes, keyword_init: true) do
+    AnalysisContext = Struct.new(:timestamp, :base_ref, :target, :changes, :review_id, :check_classes, keyword_init: true) do
       ##
       # @return [Hash] run construction attributes derived from this context
       def run_attributes
         {
           timestamp: timestamp,
+          base_ref: base_ref,
           review_id: review_id,
           checks: check_classes.map(&:check_name),
           target_files: target.files,
@@ -69,21 +71,26 @@ module CleoQualityReview
 
       AnalysisContext.new(
         timestamp: timestamp,
+        base_ref: base_ref,
         target: target,
         changes: changes,
-        review_id: review_id_for(changes, check_classes),
+        review_id: review_id_for(changes, check_classes, base_ref: base_ref),
         check_classes: check_classes,
       )
     end
 
     def resolve_target
       files = options.files
-      changed = options.changed || files.empty?
-      TargetResolver.new(command_runner: command_runner).resolve(files, changed: changed)
+      TargetResolver.new(command_runner: command_runner, base_ref: base_ref).resolve(files, changed: changed_mode?)
     end
 
     def changes_diff(target)
-      ChangesDiff.new(target_files: target.files, command_runner: command_runner)
+      ChangesDiff.new(
+        target_files: target.files,
+        command_runner: command_runner,
+        base_ref: base_ref,
+        strict_base: changed_mode?,
+      )
     end
 
     def prepare_artifacts(context)
@@ -146,13 +153,24 @@ module CleoQualityReview
       artifacts.write_run(run)
     end
 
-    def review_id_for(changes, check_classes)
+    def review_id_for(changes, check_classes, base_ref:)
+      payload = {
+        diff: changes.to_s,
+        checks: check_classes.map(&:check_name).sort,
+      }
+      payload[:base_ref] = base_ref unless base_ref == GitDiffBase::DEFAULT_BASE_REF
+
       Digest::SHA256.hexdigest(
-        JSON.generate(
-          diff: changes.to_s,
-          checks: check_classes.map(&:check_name).sort,
-        ),
+        JSON.generate(payload),
       )
+    end
+
+    def changed_mode?
+      options.changed || options.files.empty?
+    end
+
+    def base_ref
+      options.base || GitDiffBase::DEFAULT_BASE_REF
     end
   end
 end

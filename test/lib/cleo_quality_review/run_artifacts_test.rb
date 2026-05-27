@@ -28,6 +28,17 @@ module CleoQualityReview
       end
     end
 
+    def test_reconstructs_legacy_manifest_without_base_ref
+      in_tmpdir do
+        artifacts = prepared_artifacts
+        write_legacy_manifest_without_base_ref(artifacts)
+
+        run = RunArtifacts.load(review_id: "review-id").to_run(format: "github")
+
+        assert_equal "origin/main", run.base_ref
+      end
+    end
+
     def test_result_serializes_tool_name_and_tool_type
       result = Result.new(
         tool_name: "reek",
@@ -96,9 +107,10 @@ module CleoQualityReview
     end
 
     def assert_reconstructed_run(run)
-      review_id, format, target_files = run.to_h.values_at(:review_id, :format, :target_files)
+      review_id, base_ref, format, target_files = run.to_h.values_at(:review_id, :base_ref, :format, :target_files)
 
       assert_equal "review-id", review_id
+      assert_equal "origin/feature-branch", base_ref
       assert_equal "github", format
       assert_equal ["app/example.rb"], target_files
       assert_reconstructed_result(run.results.first)
@@ -163,6 +175,7 @@ module CleoQualityReview
       Run.new(
         timestamp: 123,
         review_id: "review-id",
+        base_ref: "origin/feature-branch",
         format: "agent",
         checks: ["fake"],
         target_files: ["app/example.rb"],
@@ -183,6 +196,21 @@ module CleoQualityReview
         filepath: "app/example.rb",
         line: 1,
       )
+    end
+
+    def write_legacy_manifest_without_base_ref(artifacts)
+      File.write(
+        File.join(artifacts.to_s, "manifest.json"),
+        JSON.pretty_generate(
+          review_id: "review-id",
+          timestamp: 123,
+          checks: ["fake"],
+          target_files: ["app/example.rb"],
+          ruby_files: ["app/example.rb"],
+        ),
+      )
+      File.write(File.join(artifacts.to_s, "results.json"), JSON.pretty_generate([]))
+      File.write(File.join(artifacts.to_s, "complete.json"), JSON.pretty_generate({ review_id: "review-id", completed: true }))
     end
   end
 end

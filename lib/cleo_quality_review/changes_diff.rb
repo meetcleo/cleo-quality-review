@@ -2,7 +2,7 @@
 
 require "digest"
 
-require_relative "target_resolver"
+require_relative "git_diff_base"
 
 module CleoQualityReview
   ##
@@ -11,9 +11,13 @@ module CleoQualityReview
     ##
     # @param [Array<String>] target_files files included in the review
     # @param [CommandRunner] command_runner for executing git commands
-    def initialize(target_files:, command_runner:)
+    # @param [String] base_ref git ref to compare against
+    # @param [Boolean] strict_base whether unresolved refs should raise
+    def initialize(target_files:, command_runner:, base_ref: GitDiffBase::DEFAULT_BASE_REF, strict_base: false)
       @target_files = target_files
       @command_runner = command_runner
+      @base_ref = base_ref || GitDiffBase::DEFAULT_BASE_REF
+      @strict_base = strict_base
     end
 
     ##
@@ -30,7 +34,7 @@ module CleoQualityReview
 
     private
 
-    attr_reader :command_runner, :target_files
+    attr_reader :command_runner, :target_files, :base_ref, :strict_base
 
     def tracked_changes_diff
       command = ["git", "diff", diff_base]
@@ -56,12 +60,7 @@ module CleoQualityReview
     end
 
     def diff_base
-      @diff_base ||= begin
-        result = command_runner.run("git", "merge-base", TargetResolver::BASE_REF, "HEAD")
-        base = result.stdout.strip
-
-        result.success? && !base.empty? ? base : TargetResolver::BASE_REF
-      end
+      @diff_base ||= GitDiffBase.resolve(command_runner: command_runner, base_ref: base_ref, strict: strict_base)
     end
   end
 end
