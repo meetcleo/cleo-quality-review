@@ -5,3 +5,4 @@ log/
 .env.development.local
 node_modules/
 coverage
+*.gem
