@@ -127,6 +127,9 @@ The model is currently fixed to `gpt-5.5`.
 %%{init: {"themeVariables": {"fontSize": "32px"}}}%%
 flowchart LR
     Executable["exe/check_quality"]:::accent --> CLI["CLI"]:::accent
+    CLI --> RootRegistrations["CleoQualityReview root registrations"]:::accent
+    RootRegistrations --> ChecksModule["Checks"]:::rounded
+    RootRegistrations --> LlmProvidersModule["LlmProviders"]:::rounded
     CLI --> Options["Options"]:::rounded
     CLI --> Runner["Runner"]:::accent
     CLI --> Formatter["Formatter"]:::accent
@@ -139,8 +142,10 @@ flowchart LR
     Runner --> RunArtifacts["RunArtifacts"]:::neutral
     RunArtifacts --> Git
 
-    Runner --> CheckRegistry["CheckRegistry"]:::rounded
-    CheckRegistry --> QualityCheck["QualityCheck"]:::rounded
+    Runner --> ChecksModule
+    ChecksModule --> ChecksRegistry["Checks::Registry"]:::rounded
+    ChecksModule --> QualityCheck["QualityCheck"]:::rounded
+    ChecksRegistry --> QualityCheck
     Runner --> QualityCheck
     QualityCheck --> CommandRunner["CommandRunner"]:::rounded
     CommandRunner --> Tools["Reek / Flog / Fasterer / Debride"]:::info
@@ -155,9 +160,17 @@ flowchart LR
     PromptBuilder --> RunArtifacts
     Formatter --> LlmClient["LlmClient"]:::info
     LlmClient --> LlmConfig["LlmConfig"]:::neutral
-    LlmClient --> LlmProviderRegistry["LlmProviderRegistry"]:::rounded
-    LlmProviderRegistry --> OpenAiClient["OpenAiClient"]:::info
+    LlmClient --> LlmProvidersModule
+    LlmProvidersModule --> LlmProvidersRegistry["LlmProviders::Registry"]:::rounded
+    LlmProvidersModule --> OpenAiProvider["OpenAi::Provider"]:::info
+    LlmProvidersModule --> StubProvider["Stub::Provider"]:::neutral
+    LlmConfig --> OpenAiConfig["OpenAi::Config"]:::neutral
+    LlmConfig --> StubConfig["Stub::Config"]:::neutral
+    OpenAiProvider --> OpenAiClient["OpenAi::Client"]:::info
+    OpenAiProvider --> OpenAiConfig
     OpenAiClient --> OpenAI["OpenAI API"]:::info
+    StubProvider --> StubClient["Stub::Client"]:::neutral
+    StubProvider --> StubConfig
 
     GitHubReviewPublisher --> GitHubReviewBuilder["GitHubReviewBuilder"]:::rounded
     GitHubReviewPublisher --> GitHubAPI["GitHub API"]:::info
