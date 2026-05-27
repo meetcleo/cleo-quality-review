@@ -11,7 +11,7 @@ Runs a suite of code quality tools against your code changes, and feeds them to 
 This will run all of the tools locally, and report back a human-readable report on what needs changed and why.
 
 ```
-bundle exec quality_review foo.rb
+bundle exec check_quality foo.rb
 ```
 
 ### 🤖 Agents review their own code before pushing
@@ -19,7 +19,7 @@ bundle exec quality_review foo.rb
 This will run all of the tools locally, and report back an agent-readable report on what needs changed and why.
 
 ```
-bundle exec quality_review foo.rb --format=agent
+bundle exec check_quality foo.rb --format=agent
 ```
 
 ### 🤖 Github actions reviews changes on PR
@@ -27,7 +27,7 @@ bundle exec quality_review foo.rb --format=agent
 This will run all of the tools on a PR branch, and report back a github-readable report on what needs changed and why. This will add [annotation comments](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#setting-a-debug-message) to your code where issues are reported.
 
 ```
-bundle exec quality_review foo.rb --format=github
+bundle exec check_quality foo.rb --format=github
 ```
 
 
