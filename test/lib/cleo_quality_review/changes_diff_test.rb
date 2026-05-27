@@ -38,5 +38,83 @@ module CleoQualityReview
       assert_equal "diff content", changes.to_s
       assert_equal Digest::SHA256.hexdigest("diff content"), changes.review_id
     end
+
+    def test_uses_configured_base_ref_when_capturing_diff
+      command_runner = Runner.new(calls: [])
+      result = method(:command_result)
+      command_runner.define_singleton_method(:run) do |*command, env: {}|
+        calls << command
+        case command
+        when ["git", "merge-base", "origin/feature-branch", "HEAD"]
+          result.call(stdout: "feature-base\n")
+        when ["git", "diff", "feature-base", "--", "app/example.rb"]
+          result.call(stdout: "feature diff")
+        when ["git", "ls-files", "--others", "--exclude-standard", "--", "app/example.rb"]
+          result.call(stdout: "")
+        else
+          result.call(stdout: "")
+        end
+      end
+
+      changes = ChangesDiff.new(
+        target_files: ["app/example.rb"],
+        command_runner: command_runner,
+        base_ref: "origin/feature-branch",
+      )
+
+      assert_equal "feature diff", changes.to_s
+    end
+
+    def test_strict_base_resolution_raises_for_unresolved_base_ref
+      command_runner = Runner.new(calls: [])
+      result = method(:command_result)
+      command_runner.define_singleton_method(:run) do |*command, env: {}|
+        calls << command
+        case command
+        when ["git", "merge-base", "origin/missing", "HEAD"]
+          result.call(stderr: "fatal\n", success: false)
+        else
+          result.call(stdout: "")
+        end
+      end
+
+      changes = ChangesDiff.new(
+        target_files: ["app/example.rb"],
+        command_runner: command_runner,
+        base_ref: "origin/missing",
+        strict_base: true,
+      )
+
+      error = assert_raises(ArgumentError) { changes.to_s }
+
+      assert_equal "Could not resolve quality review base ref: origin/missing", error.message
+    end
+
+    def test_non_strict_base_resolution_falls_back_to_ref
+      command_runner = Runner.new(calls: [])
+      result = method(:command_result)
+      command_runner.define_singleton_method(:run) do |*command, env: {}|
+        calls << command
+        case command
+        when ["git", "merge-base", "origin/missing", "HEAD"]
+          result.call(stderr: "fatal\n", success: false)
+        when ["git", "diff", "origin/missing", "--", "app/example.rb"]
+          result.call(stdout: "fallback diff")
+        when ["git", "ls-files", "--others", "--exclude-standard", "--", "app/example.rb"]
+          result.call(stdout: "")
+        else
+          result.call(stdout: "")
+        end
+      end
+
+      changes = ChangesDiff.new(
+        target_files: ["app/example.rb"],
+        command_runner: command_runner,
+        base_ref: "origin/missing",
+        strict_base: false,
+      )
+
+      assert_equal "fallback diff", changes.to_s
+    end
   end
 end

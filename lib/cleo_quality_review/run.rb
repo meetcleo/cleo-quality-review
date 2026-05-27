@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative "git_diff_base"
+
 module CleoQualityReview
   ##
   # Value object representing a quality review run with its configuration and results
@@ -25,6 +27,7 @@ module CleoQualityReview
   Run = Struct.new(
     :timestamp,
     :review_id,
+    :base_ref,
     :format,
     :checks,
     :target_files,
@@ -42,6 +45,7 @@ module CleoQualityReview
       {
         timestamp: timestamp,
         review_id: review_id,
+        base_ref: comparison_base_ref,
         format: format,
         checks: checks,
         target_files: target_files,
@@ -68,11 +72,18 @@ module CleoQualityReview
     def manifest_data
       {
         review_id: review_id,
+        base_ref: comparison_base_ref,
         timestamp: timestamp,
         checks: checks,
         target_files: target_files,
         ruby_files: ruby_files,
       }
+    end
+
+    private
+
+    def comparison_base_ref
+      base_ref || GitDiffBase::DEFAULT_BASE_REF
     end
   end
 end

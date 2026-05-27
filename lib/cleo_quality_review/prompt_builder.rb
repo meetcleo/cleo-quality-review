@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "target_resolver"
+require_relative "git_diff_base"
 
 module CleoQualityReview
   ##
@@ -46,7 +46,7 @@ module CleoQualityReview
     end
 
     def diff_section
-      fenced("Git diff against #{TargetResolver::BASE_REF}", "diff", artifacts.changes_diff)
+      fenced("Git diff against #{run.base_ref || GitDiffBase::DEFAULT_BASE_REF}", "diff", artifacts.changes_diff)
     end
 
     def check_outputs_section

@@ -5,6 +5,7 @@ require "fileutils"
 
 require_relative "result"
 require_relative "run"
+require_relative "git_diff_base"
 require_relative "run_artifacts/raw_check_outputs"
 
 module CleoQualityReview
@@ -79,6 +80,7 @@ module CleoQualityReview
       Run.new(
         timestamp: manifest.fetch("timestamp"),
         review_id: manifest.fetch("review_id"),
+        base_ref: manifest.fetch("base_ref", GitDiffBase::DEFAULT_BASE_REF),
         format: format,
         checks: manifest.fetch("checks", []),
         target_files: target_files,

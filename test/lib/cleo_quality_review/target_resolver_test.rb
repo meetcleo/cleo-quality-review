@@ -159,5 +159,46 @@ module CleoQualityReview
         assert_equal ["app/models/user.rb"], target.files
       end
     end
+
+    def test_uses_configured_base_ref_for_changed_files
+      in_tmpdir do
+        FileUtils.mkdir_p("app/models")
+        File.write("app/models/user.rb", "# frozen_string_literal: true\n")
+
+        resolver = TargetResolver.new(
+          base_ref: "origin/feature-branch",
+          command_runner: FakeCommandRunner.new(
+            results: {
+              ["git", "merge-base", "origin/feature-branch", "HEAD"] => command_result(stdout: "feature-base\n"),
+              ["git", "diff", "--name-only", "--diff-filter=ACMRT", "feature-base"] => command_result(stdout: "app/models/user.rb\n"),
+              ["git", "ls-files", "--others", "--exclude-standard"] => command_result(stdout: ""),
+            },
+          ),
+        )
+
+        target = resolver.resolve([], changed: true)
+
+        assert_equal ["app/models/user.rb"], target.files
+      end
+    end
+
+    def test_unresolved_base_ref_fails_in_changed_mode
+      in_tmpdir do
+        resolver = TargetResolver.new(
+          base_ref: "origin/missing",
+          command_runner: FakeCommandRunner.new(
+            results: {
+              ["git", "merge-base", "origin/missing", "HEAD"] => command_result(stderr: "fatal\n", success: false),
+            },
+          ),
+        )
+
+        error = assert_raises(ArgumentError) do
+          resolver.resolve([], changed: true)
+        end
+
+        assert_equal "Could not resolve quality review base ref: origin/missing", error.message
+      end
+    end
   end
 end

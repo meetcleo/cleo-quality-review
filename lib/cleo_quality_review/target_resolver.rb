@@ -1,12 +1,13 @@
 # frozen_string_literal: true
 
 require_relative "configuration"
+require_relative "git_diff_base"
 
 module CleoQualityReview
   ##
   # Resolves target files for quality review based on git changes and configuration
   class TargetResolver
-    BASE_REF = "origin/main"
+    BASE_REF = GitDiffBase::DEFAULT_BASE_REF
 
     ##
     # Value object containing resolved file lists
@@ -20,9 +21,11 @@ module CleoQualityReview
     ##
     # @param [CommandRunner] command_runner for executing git commands
     # @param [Configuration] configuration file filtering configuration
-    def initialize(command_runner:, configuration: Configuration.load)
+    # @param [String] base_ref git ref to compare changed files against
+    def initialize(command_runner:, configuration: Configuration.load, base_ref: GitDiffBase::DEFAULT_BASE_REF)
       @command_runner = command_runner
       @configuration = configuration
+      @base_ref = base_ref || GitDiffBase::DEFAULT_BASE_REF
     end
 
     ##
@@ -41,7 +44,7 @@ module CleoQualityReview
 
     private
 
-    attr_reader :command_runner, :configuration
+    attr_reader :command_runner, :configuration, :base_ref
 
     def resolve_target_files(files, changed:)
       candidates = resolve_candidates(files, changed: changed)
@@ -91,12 +94,7 @@ module CleoQualityReview
     end
 
     def diff_base
-      @diff_base ||= begin
-        result = command_runner.run("git", "merge-base", BASE_REF, "HEAD")
-        base = result.stdout.strip
-
-        result.success? && !base.empty? ? base : BASE_REF
-      end
+      @diff_base ||= GitDiffBase.resolve(command_runner: command_runner, base_ref: base_ref, strict: true)
     end
 
     def expand_target_paths(paths)

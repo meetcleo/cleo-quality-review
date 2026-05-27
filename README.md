@@ -52,7 +52,7 @@ bundle exec check_quality --checks debride --files app/models/example.rb
 CLEO_QUALITY_REVIEW_OPEN_AI_KEY=sk-... bundle exec check_quality --format human --files app/models/example.rb
 ```
 
-`--files` accepts files or directories. Directories are expanded recursively, then filtered by the active config. When `--files` is omitted, `check_quality` targets changed files from `origin/main...HEAD` that match the active config.
+`--files` accepts files or directories. Directories are expanded recursively, then filtered by the active config. When `--files` is omitted, `check_quality` targets changed files from `origin/main...HEAD` that match the active config. Use `--base REF` to compare against another fetched ref, such as `--base origin/feature-branch`.
 
 CI can split analysis from output rendering so the Ruby quality tools run once and multiple outputs reuse the same artifacts:
 
