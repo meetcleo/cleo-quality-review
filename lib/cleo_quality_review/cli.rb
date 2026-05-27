@@ -2,6 +2,7 @@
 
 require "optparse"
 
+require_relative "../cleo_quality_review"
 require_relative "command_runner"
 require_relative "formatter"
 require_relative "github_review_publisher"

@@ -2,7 +2,7 @@
 
 require_relative "llm_config"
 require_relative "llm_logger"
-require_relative "llm_provider_registry"
+require_relative "llm_providers"
 
 module CleoQualityReview
   ##
@@ -53,7 +53,7 @@ module CleoQualityReview
     end
 
     def provider
-      @provider ||= LlmProviderRegistry.fetch(config.provider)
+      @provider ||= LlmProviders.fetch(config.provider)
     end
   end
 end

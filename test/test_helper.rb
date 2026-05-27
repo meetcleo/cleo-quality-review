@@ -15,10 +15,6 @@ $LOAD_PATH.unshift(File.expand_path("../lib", __dir__))
 
 require "cleo_quality_review"
 require "cleo_quality_review/command_result"
-require "cleo_quality_review/llm_provider_registry"
-require "cleo_quality_review/stub_llm_provider"
-
-CleoQualityReview::LlmProviderRegistry.register("stub", CleoQualityReview::StubLlmProvider.new)
 
 module CleoQualityReviewTestHelpers
   Status = Struct.new(:success) do

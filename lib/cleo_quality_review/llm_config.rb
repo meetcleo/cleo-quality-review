@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "open_ai_config"
+require_relative "llm_providers/open_ai_config"
 
 module CleoQualityReview
   ##
@@ -21,16 +21,16 @@ module CleoQualityReview
     end
 
     ##
-    # @return [OpenAiConfig]
+    # @return [LlmProviders::OpenAi::Config]
     def open_ai_config
-      @open_ai_config ||= OpenAiConfig.new(env: env)
+      @open_ai_config ||= LlmProviders::OpenAi::Config.new(env: env)
     end
 
     ##
-    # @return [StubConfig]
+    # @return [LlmProviders::Stub::Config]
     def stub_config
-      require_relative "stub_llm_provider"
-      @stub_config ||= StubConfig.new(env: env)
+      require_relative "llm_providers/stub"
+      @stub_config ||= LlmProviders::Stub::Config.new(env: env)
     end
 
     private

@@ -40,21 +40,7 @@ module CleoQualityReview
         # @return [Array<Class>] resolved check classes
         # @raise [ArgumentError] if an unknown check name is provided
         def resolve(names)
-          names = ['all'] if names.empty?
-          names_to_resolve = names.include?('all') ? registrations.keys : names.map(&:to_s)
-          require 'debug'
-
-          names_to_resolve.map do |name|
-            begin
-              name = CheckName.new(name).to_s
-              registration = registrations[name]
-              raise UnknownCheckError.new(name) unless registration
-
-              registration.klass
-            rescue NameError
-              raise UnknownCheckError.new(name)
-            end
-          end
+          names_to_resolve(names).map { |name| resolve_name(name) }
         end
 
         def registered?(tool_name)
@@ -65,6 +51,20 @@ module CleoQualityReview
 
         def registrations
           @registrations ||= {}
+        end
+
+        def names_to_resolve(names)
+          names = ['all'] if names.empty?
+
+          names.include?('all') ? registrations.keys : names.map(&:to_s)
+        end
+
+        def resolve_name(name)
+          name = CheckName.new(name).to_s
+          registration = registrations[name]
+          raise UnknownCheckError.new(name) unless registration
+
+          registration.klass
         end
       end
     end
