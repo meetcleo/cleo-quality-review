@@ -2,10 +2,46 @@
 
 [![Tests](https://github.com/meetcleo/cleo-quality-review/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/meetcleo/cleo-quality-review/actions/workflows/tests.yml)
 
-Local quality checks for Cleo repositories.
+Runs a suite of code quality tools against your code changes, and feeds them to an LLM to help make the feedback easier to apply.
+
+## Use cases
+
+### Review my own code locally before pushing
+
+This will run all of the tools locally, and report back a human-readable report on what needs changed and why.
+
+```
+bundle exec quality_review foo.rb
+```
+
+### 🤖 Agents review their own code before pushing
+
+This will run all of the tools locally, and report back an agent-readable report on what needs changed and why.
+
+```
+bundle exec quality_review foo.rb --format=agent
+```
+
+### 🤖 Github actions reviews changes on PR
+
+This will run all of the tools on a PR branch, and report back a github-readable report on what needs changed and why. This will add [annotation comments](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-commands#setting-a-debug-message) to your code where issues are reported.
+
+```
+bundle exec quality_review foo.rb --format=github
+```
 
 
-## Usage
+## Installation
+
+```
+bundle add cleo_quality_review --group=development
+```
+
+In your local environment, configure the ENV variable named `CLEO_QUALITY_REVIEW_OPEN_AI_KEY` with your own [OpenAI API key](https://platform.openai.com/api-keys).
+
+
+
+## Usage 
 
 ```bash
 bundle exec check_quality --format agent --checks reek --files vendor/cleo_quality_review/lib
