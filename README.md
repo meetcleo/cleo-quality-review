@@ -1,6 +1,8 @@
 # Cleo Quality Review
 
 [![Tests](https://github.com/meetcleo/cleo-quality-review/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/meetcleo/cleo-quality-review/actions/workflows/tests.yml)
+[![Gem Version](https://badge.fury.io/rb/cleo_quality_review.svg?icon=si%3Arubygems)](https://badge.fury.io/rb/cleo_quality_review)
+
 
 Runs a suite of code quality tools against your code changes, and feeds them to an LLM to help make the feedback easier to apply.
 
