@@ -14,9 +14,10 @@ Gem::Specification.new do |spec|
   spec.required_ruby_version = ">= 3.2.0"
 
   spec.metadata["rubygems_mfa_required"] = "true"
+  spec.metadata["source_code_uri"] = "https://github.com/meetcleo/cleo_quality_review"
 
   spec.files =
-    Dir.glob("{#{File.basename(__FILE__)},config/**/*,exe/**/*,lib/**/*,prompts/**/*}", File::FNM_DOTMATCH).select do |path|
+    Dir.glob("{#{File.basename(__FILE__)},LICENSE,config/**/*,exe/**/*,lib/**/*,prompts/**/*}", File::FNM_DOTMATCH).select do |path|
       File.file?(path) && !File.symlink?(path)
     end
 
