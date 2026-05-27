@@ -30,14 +30,10 @@ module CleoQualityReview
 
         def test_http_transport_configures_net_http_timeouts
           http_start = HttpStartRecorder.new
+          response = post_json_with_stubbed_start(http_start)
 
-          response = NetHttpStartStub.new(http_start).with_stub do
-            HttpTransport.new.post_json(open_ai_request)
-          end
-
-          assert_equal 200, response.status_code
-          assert_http_start(http_start)
-          assert_http_timeouts(http_start.http)
+          assert_success_response(response)
+          assert_http_connection(http_start)
         end
 
         def test_extracts_nested_response_text
@@ -61,45 +57,38 @@ module CleoQualityReview
         end
 
         def test_raises_clear_error_for_api_failure
-          transport = FakeTransport.new(response: HttpResponse.new(status_code: 401, body: "unauthorized"))
-          client = Client.new(
-            config: FakeConfig.new(api_key: "secret", model: "gpt-5.5", timeout_seconds: 180),
-            http_transport: transport,
-          )
+          error = api_error_from(response: HttpResponse.new(status_code: 401, body: "unauthorized"))
 
-          error = assert_raises(ApiError) do
-            client.generate_review("prompt")
-          end
-
-          assert_includes error.message, "status 401"
-          assert_includes error.message, "unauthorized"
+          assert_error_message_includes(error, "status 401", "unauthorized")
         end
 
         def test_wraps_net_timeout_errors
-          transport = FakeTransport.new(error: Net::ReadTimeout.new("request timed out"))
-          client = Client.new(
-            config: FakeConfig.new(api_key: "secret", model: "gpt-5.5", timeout_seconds: 180),
-            http_transport: transport,
-          )
+          error = api_error_from(error: Net::ReadTimeout.new("request timed out"))
 
-          error = assert_raises(ApiError) do
-            client.generate_review("prompt")
-          end
-
-          assert_includes error.message, "timed out after 180 seconds"
-          assert_includes error.message, "Net::ReadTimeout"
+          assert_error_message_includes(error, "timed out after 180 seconds", "Net::ReadTimeout")
         end
 
         private
 
         def assert_responses_api_request(request)
-          headers = request.headers
-
           assert_equal URI("https://api.openai.com/v1/responses"), request.uri
-          assert_equal "Bearer secret", headers.fetch("Authorization")
-          assert_equal "application/json", headers.fetch("Content-Type")
+          assert_authorization_headers(request.headers)
           assert_equal({ model: "gpt-5.5", input: "prompt" }, request.body)
           assert_equal 180, request.timeout_seconds
+        end
+
+        def assert_authorization_headers(headers)
+          assert_equal "Bearer secret", headers.fetch("Authorization")
+          assert_equal "application/json", headers.fetch("Content-Type")
+        end
+
+        def assert_success_response(response)
+          assert_equal 200, response.status_code
+        end
+
+        def assert_http_connection(http_start)
+          assert_http_start(http_start)
+          assert_http_timeouts(http_start.http)
         end
 
         def assert_http_start(http_start)
@@ -121,6 +110,29 @@ module CleoQualityReview
             body: { input: "prompt" },
             timeout_seconds: 180,
           )
+        end
+
+        def post_json_with_stubbed_start(http_start)
+          NetHttpStartStub.new(http_start).with_stub do
+            HttpTransport.new.post_json(open_ai_request)
+          end
+        end
+
+        def client_for(transport)
+          Client.new(
+            config: FakeConfig.new(api_key: "secret", model: "gpt-5.5", timeout_seconds: 180),
+            http_transport: transport,
+          )
+        end
+
+        def api_error_from(response: nil, error: nil)
+          transport = FakeTransport.new(response: response, error: error)
+
+          assert_raises(ApiError) { client_for(transport).generate_review("prompt") }
+        end
+
+        def assert_error_message_includes(error, *messages)
+          messages.each { |message| assert_includes error.message, message }
         end
 
         class FakeHttp
