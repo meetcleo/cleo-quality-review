@@ -35,7 +35,7 @@ module CleoQualityReview
     # @param [CommandRunner] command_runner for executing shell commands
     # @param [#now] clock time source for timestamps
     # @param [CheckRegistry] check_registry registry for resolving check names
-    def initialize(options:, command_runner: CommandRunner.new, clock: Time, check_registry: Registry.new)
+    def initialize(options:, command_runner: CommandRunner.new, clock: Time, check_registry: Checks)
       @options = options
       @command_runner = command_runner
       @clock = clock

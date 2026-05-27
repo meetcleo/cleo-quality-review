@@ -11,6 +11,7 @@ module CleoQualityReview
         end
       end
 
+      require 'delegate'
       class CheckName < DelegateClass(String)
         def initialize(name)
           super(name.to_s.downcase)
@@ -40,7 +41,7 @@ module CleoQualityReview
         # @raise [ArgumentError] if an unknown check name is provided
         def resolve(names)
           names = ['all'] if names.empty?
-          names_to_resolve = names.include?('all') ? @registrations.keys : names.map(&:to_s)
+          names_to_resolve = names.include?('all') ? registrations.keys : names.map(&:to_s)
           require 'debug'
 
           names_to_resolve.map do |name|

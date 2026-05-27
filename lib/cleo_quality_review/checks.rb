@@ -22,6 +22,9 @@ module CleoQualityReview
         Registry.register(tool_name.to_s, tool_class, tool_type: tool_type.to_s)
       end
 
+      def resolve(tool_name)
+        Registry.resolve(tool_name.to_s)
+      end
       ##
       # Has a tool with the given name been registered?
       #
