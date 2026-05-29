@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative "../../../test_helper"
-require "cleo_quality_review/checks/debride"
 require "cleo_quality_review/checks/fasterer"
 require "cleo_quality_review/checks/flog"
 require "cleo_quality_review/checks/reek"

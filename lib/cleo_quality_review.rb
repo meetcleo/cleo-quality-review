@@ -14,7 +14,6 @@ module CleoQualityReview
   Checks.register("Reek", Checks::Reek, tool_type: :smell_detection)
   Checks.register("Flog", Checks::Flog, tool_type: :complexity)
   Checks.register("Fasterer", Checks::Fasterer, tool_type: :performance)
-  Checks.register("Debride", Checks::Debride, tool_type: :dead_code)
 
   ##
   # Register all supported LLM APIs for formatting output here

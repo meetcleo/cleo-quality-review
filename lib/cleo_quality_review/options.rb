@@ -120,7 +120,7 @@ module CleoQualityReview
     end
 
     def register_checks_option(opts)
-      opts.on("-c", "--checks CHECKS", Array, "Checks to run: all, reek, flog, fasterer, debride") { |values| checks.concat(values) }
+      opts.on("-c", "--checks CHECKS", Array, "Checks to run: all, reek, flog, fasterer") { |values| checks.concat(values) }
     end
 
     def register_only_option(opts)
@@ -128,7 +128,7 @@ module CleoQualityReview
     end
 
     def register_exclude_option(opts)
-      opts.on("-x", "--exclude CHECKS", Array, "Checks to exclude: reek, flog, fasterer, debride") { |values| exclude.concat(values) }
+      opts.on("-x", "--exclude CHECKS", Array, "Checks to exclude: reek, flog, fasterer") { |values| exclude.concat(values) }
     end
 
     def register_target_options(opts)
